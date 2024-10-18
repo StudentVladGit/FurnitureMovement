@@ -1,6 +1,7 @@
 using FurnitureMovement.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +10,17 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+var exampleContextConnectionString = builder.Configuration.GetConnectionString(nameof(OrderContext));
+builder.Services.AddDbContextFactory<OrderContext>(options =>
+    options.UseNpgsql(exampleContextConnectionString));
+
 var app = builder.Build();
+
+using var serviceScope = app.Services.CreateScope();
+var exampleContext = serviceScope.ServiceProvider.GetRequiredService<OrderContext>();
+exampleContext?.Database.Migrate();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
