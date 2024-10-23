@@ -1,14 +1,15 @@
 ﻿@page "/fetchdata"
 @using FurnitureMovement.Data
+@using FurnitureMovement.Services
 @inject WeatherForecastService ForecastService
 
-<PageTitle>Weather forecast</PageTitle>
+<PageTitle>Orders</PageTitle>
 
-<h1>Weather forecast</h1>
+<h1>Orders</h1>
 
 <p>This component demonstrates fetching data from a service.</p>
 
-@if (forecasts == null)
+@if (orders == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -17,20 +18,22 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Date</th>
-                <th>Temp. (C)</th>
-                <th>Temp. (F)</th>
-                <th>Summary</th>
+                <th>Number</th>
+                <th>Drawning</th>
+                <th>Furniture</th>
+                <th>AdmissionDate</th>
+                <th>Quantity</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var forecast in forecasts)
+            @foreach (var order in orders)
             {
                 <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
+                    <td>@order.Number.</td>
+                    <td>@order.Drawning</td>
+                    <td>@order.Furniture</td>
+                    <td>@order.AdmissionDate</td>
+                    <td>@order.Quantity</td>
                 </tr>
             }
         </tbody>
@@ -38,10 +41,11 @@ else
 }
 
 @code {
-    private WeatherForecast[]? forecasts;
+    private Order[]? orders;
 
     protected override async Task OnInitializedAsync()
     {
-        forecasts = await ForecastService.GetForecastAsync(DateOnly.FromDateTime(DateTime.Now));
+        //forecasts = await ForecastService.GetForecastAsync(DateOnly.FromDateTime(DateTime.Now));
+        orders = await OrderService.GetAllOrders(); // Как сделать чтобы работало
     }
 }

@@ -16,6 +16,7 @@ public class OrderService: IOrderService
         _myFactory = myFactory;
     }
 
+    //Create
     public async Task CreateOrder(Order newOrder)
     {
         using var context = _myFactory.CreateDbContext();
@@ -23,6 +24,7 @@ public class OrderService: IOrderService
         await context.SaveChangesAsync();
     }
 
+    //Read
     public async Task<List<Order>> GetAllOrders()
     {
         using var context = _myFactory.CreateDbContext();
