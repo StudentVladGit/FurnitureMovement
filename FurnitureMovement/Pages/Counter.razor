@@ -1,5 +1,6 @@
 ﻿@page "/counter"
-
+@using FurnitureMovement.Data
+@using FurnitureMovement.Services
 <PageTitle>Counter</PageTitle>
 
 <h1>Counter</h1>
@@ -14,5 +15,18 @@
     private void IncrementCount()
     {
         currentCount++;
+
+        // var newOrder = new Order
+        //     {
+        //         Number = "1", //Номер
+        //         Drawning = "Sxema",//Схемы
+        //         Furniture = "Chtoto", //Оснастка
+        //         AdmissionDate = DateTime.Now, //Поступление
+        //         Quantity = 10000  //Количество
+        //     };
+        
+        // var OrderService = new OrderService(_myFactory);
+        // _myFactory.Create(newOrder);
+
     }
 }
