@@ -13,5 +13,7 @@ namespace FurnitureMovement.Data
         public string Furniture { get; set; } //Оснастка
         public DateTime AdmissionDate { get; set; } //Поступление
         public long Quantity { get; set; } //Количество
+
+
     }
 }
