@@ -1,6 +1,7 @@
 ﻿@page "/counter"
 @using FurnitureMovement.Data
 @using FurnitureMovement.Services
+@inject IOrderService OrderService
 <PageTitle>Counter</PageTitle>
 
 <h1>Counter</h1>
@@ -10,23 +11,24 @@
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
 @code {
-    private int currentCount = 0;
+    private int currentCount = 5;
 
-    private void IncrementCount()
+    private async void IncrementCount()
     {
-        currentCount++;
+        string number = currentCount.ToString();
 
-        // var newOrder = new Order
-        //     {
-        //         Number = "1", //Номер
-        //         Drawning = "Sxema",//Схемы
-        //         Furniture = "Chtoto", //Оснастка
-        //         AdmissionDate = DateTime.Now, //Поступление
-        //         Quantity = 10000  //Количество
-        //     };
+        var newOrder = new Order
+        {
+            Number = number, //Номер
+            Drawning = "Vlad",//Схемы
+            Furniture = "Shulzhenko", //Оснастка
+            AdmissionDate = DateTime.Now, //Поступление
+            Quantity = 1  //Количество
+        };
         
-        // var OrderService = new OrderService(_myFactory); //Ругается на _myFactory не существует в текущем контексте
-        // _myFactory.Create(newOrder);
+        await OrderService.CreateOrder(newOrder);
+        
+        currentCount++;
 
     }
 }

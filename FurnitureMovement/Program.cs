@@ -1,4 +1,5 @@
 using FurnitureMovement.Data;
+using FurnitureMovement.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
@@ -13,8 +14,10 @@ builder.Services.AddSingleton<WeatherForecastService>();
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var exampleContextConnectionString = builder.Configuration.GetConnectionString(nameof(OrderContext));
-builder.Services.AddDbContextFactory<OrderContext>(options =>
+builder.Services.AddDbContext<OrderContext>(options =>
     options.UseNpgsql(exampleContextConnectionString));
+
+builder.Services.AddScoped<IOrderService, OrderService>(); //Строка 1
 
 var app = builder.Build();
 
