@@ -34,12 +34,28 @@ public class OrderService: IOrderService
         }
     }
 
-    ////Read
-    //public async Task<List<Order>> GetAllOrders()
-    //{
-    //    using var context = _myFactory.CreateDbContext();
-    //    return await context.Orders.ToListAsync();
-    //}
+    // Delete
+    public async Task Delete(string id)
+    {
+        using (var context = CreateDbContext())
+        {
+            var order = await context.Orders.FindAsync(id);
+            if (order != null)
+            {
+                context.Orders.Remove(order);
+                await context.SaveChangesAsync();
+            }
+        }
+    }
+
+    //Read
+    public async Task<List<Order>> GetAllOrders()
+    {
+        using (var context = CreateDbContext())
+        {
+            return await context.Orders.ToListAsync();
+        }
+    }
 
     //public async Task<Order> GetOrderById(int id)
     //{
@@ -47,33 +63,25 @@ public class OrderService: IOrderService
     //    return await context.Orders.FindAsync(id);
     //}
 
-    //// Update
-    //public async Task Update(Order updatedOrder)
-    //{
-    //    using var context = _myFactory.CreateDbContext();
-    //    context.Orders.Update(updatedOrder);
-    //    await context.SaveChangesAsync();
-    //}
+    // Update
+    public async Task Update(Order updatedOrder)
+    {
+        using (var context = CreateDbContext())
+        {
+            context.Orders.Update(updatedOrder);
+            await context.SaveChangesAsync();
+        }
+    }
 
-    //// Delete
-    //public async Task Delete(int id)
-    //{
-    //    using var context = _myFactory.CreateDbContext();
-    //    var order = await context.Orders.FindAsync(id);
-    //    if (order != null)
-    //    {
-    //        context.Orders.Remove(order);
-    //        await context.SaveChangesAsync();
-    //    }
-    //}
+
 }
 
 
 public interface IOrderService
 {
     Task CreateOrder(Order newOrder);
-    //Task<List<Order>> GetAllOrders();
+    Task<List<Order>> GetAllOrders();
     //Task<Order> GetOrderById(int id);
-    //Task Update(Order updatedOrder);
-    //Task Delete(int id);
+    Task Update(Order updatedOrder);
+    Task Delete(string id);
 }

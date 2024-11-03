@@ -6,29 +6,67 @@
 
 <h1>Counter</h1>
 
-<p role="status">Current count: @currentCount</p>
+<p role="status">Current count: @currentCount1</p>
+<p role="status">Current count: @currentCount2</p>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<button class="btn btn-primary" @onclick="Create">Create</button>
+<button class="btn btn-primary" @onclick="Delete">Delete</button>
+<button class="btn btn-primary" @onclick="Update">Update</button>
 
 @code {
-    private int currentCount = 5;
+    private int currentCount1 = 51;
+    private int currentCount2 = 52;
+    //public List<Order> myList;
 
-    private async void IncrementCount()
+    private async void Create()
     {
-        string number = currentCount.ToString();
+        string number1 = currentCount1.ToString();
+        string number2 = currentCount2.ToString();
 
-        var newOrder = new Order
+        var order1 = new Order
         {
-            Number = number, //Номер
-            Drawning = "Vlad",//Схемы
-            Furniture = "Shulzhenko", //Оснастка
-            AdmissionDate = DateTime.Now, //Поступление
-            Quantity = 1  //Количество
+                Number = number1,                //Номер
+                Drawning = "box",                //Схемы
+                Furniture = "tree",              //Оснастка
+                AdmissionDate = DateTime.Now,    //Поступление
+                Quantity = 222                   //Количество
         };
-        
-        await OrderService.CreateOrder(newOrder);
-        
-        currentCount++;
+
+        var order2 = new Order
+        {
+                Number = number2,                 //Номер
+                Drawning = "card",                //Схемы
+                Furniture = "plastic",            //Оснастка
+                AdmissionDate = DateTime.Now,      //Поступление
+                Quantity = 333                    //Количество
+        };
+
+
+        await OrderService.CreateOrder(order1); //Добавление
+        await OrderService.CreateOrder(order2); //Добавление
+
+        currentCount1 = currentCount1 + 2;
+        currentCount2 = currentCount2 + 2;
 
     }
+
+    private async void Delete()
+    {
+        await OrderService.Delete("6"); //Удаление
+    }
+
+    private async void Update()
+    {
+        var updateOrder = new Order
+        {
+                Number = "52",                   //Номер
+                Drawning = "Proizoshla",            //Схемы
+                Furniture = "Zamena",           //Оснастка
+                AdmissionDate = DateTime.Now,   //Поступление
+                Quantity = 30                   //Количество
+        };
+
+        await OrderService.Update(updateOrder); //Обновление
+    }
+
 }
