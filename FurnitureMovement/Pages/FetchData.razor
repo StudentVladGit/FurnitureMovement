@@ -2,12 +2,14 @@
 @using FurnitureMovement.Data
 @using FurnitureMovement.Services
 @inject WeatherForecastService ForecastService
+@inject IOrderService OrderService
 
 <PageTitle>Orders</PageTitle>
 
 <h1>Orders</h1>
 
 <p>This component demonstrates fetching data from a service.</p>
+<button class="btn btn-primary" @onclick="OnInitializedAsync">Update</button>
 
 @if (orders == null)
 {
@@ -41,11 +43,11 @@ else
 }
 
 @code {
-    private Order[]? orders;
+    private List<Order> orders = new();
 
     protected override async Task OnInitializedAsync()
     {
         //forecasts = await ForecastService.GetForecastAsync(DateOnly.FromDateTime(DateTime.Now));
-        //orders = await OrderService.GetAllOrders(); // Как сделать чтобы работало
+        orders = await OrderService.GetAllOrders(); // Как сделать чтобы работало
     }
 }
