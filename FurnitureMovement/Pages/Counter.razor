@@ -9,14 +9,16 @@
 <p role="status">Current count: @currentCount1</p>
 <p role="status">Current count: @currentCount2</p>
 
-<button class="btn btn-primary" @onclick="Create">Create</button>
-<button class="btn btn-primary" @onclick="Delete">Delete</button>
-<button class="btn btn-primary" @onclick="Update">Update</button>
+<button class="btn btn-primary" @onclick="Create">Удалить</button>
+<button class="btn btn-primary" @onclick="Delete">Редактировать</button>
+<button class="btn btn-primary" @onclick="Update">К складу</button>
+<button class="btn btn-primary" @onclick="Update">Обновить</button>
+<input type="text" class="textbox" placeholder="Поиск"/>
 
 @code {
-    private int currentCount1 = 51;
-    private int currentCount2 = 52;
-    //public List<Order> myList;
+    private int currentCount1 = 125;
+    private int currentCount2 = 158;
+    public List<Order> myList;
 
     private async void Create()
     {
@@ -26,17 +28,17 @@
         var order1 = new Order
         {
                 Number = number1,                //Номер
-                Drawning = "box",                //Схемы
-                Furniture = "tree",              //Оснастка
+                Drawning = "СХ55",                //Схемы
+                Furniture = "Форма",              //Оснастка
                 AdmissionDate = DateTime.Now,    //Поступление
-                Quantity = 222                   //Количество
+                Quantity = 10                   //Количество
         };
 
         var order2 = new Order
         {
                 Number = number2,                 //Номер
-                Drawning = "card",                //Схемы
-                Furniture = "plastic",            //Оснастка
+                Drawning = "СХ41",                //Схемы
+                Furniture = "Крепеж",            //Оснастка
                 AdmissionDate = DateTime.Now,      //Поступление
                 Quantity = 333                    //Количество
         };
@@ -59,8 +61,8 @@
     {
         var updateOrder = new Order
         {
-                Number = "52",                   //Номер
-                Drawning = "Proizoshla",            //Схемы
+                Number = "52",                  //Номер
+                Drawning = "Proizoshla",        //Схемы
                 Furniture = "Zamena",           //Оснастка
                 AdmissionDate = DateTime.Now,   //Поступление
                 Quantity = 30                   //Количество
