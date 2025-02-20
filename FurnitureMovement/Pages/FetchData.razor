@@ -4,16 +4,16 @@
 @inject WeatherForecastService ForecastService
 @inject IOrderService OrderService
 
-<PageTitle>Orders</PageTitle>
+<PageTitle>Оснастка</PageTitle>
 
-<h1>Orders</h1>
+<h1>Заказ оснастки</h1>
 
 <p>This component demonstrates fetching data from a service.</p>
-<button class="btn btn-primary" @onclick="OnInitializedAsync">Update</button>
+<button class="btn btn-primary" @onclick="OnInitializedAsync">Обновить</button>
 
 @if (orders == null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>Загрузка...</em></p>
 }
 else
 {
