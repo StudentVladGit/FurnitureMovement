@@ -1,8 +1,13 @@
+using Blazorise;
 using FurnitureMovement.Data;
 using FurnitureMovement.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
+
+using Blazorise;//Добавили
+using Blazorise.Bootstrap5;//Добавили
+using Blazorise.Icons.FontAwesome;//Добавили
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,3 +48,12 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
+
+//Добавили
+builder.Services
+    .AddBlazorise(options =>
+    {
+        options.Immediate = true;
+    })
+    .AddBootstrap5Providers()
+    .AddFontAwesomeIcons();
