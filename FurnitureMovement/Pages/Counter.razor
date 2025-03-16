@@ -2,6 +2,7 @@
 @using FurnitureMovement.Data
 @using FurnitureMovement.Services
 @inject IOrderService OrderService
+
 <PageTitle>ТАБЛИЦА</PageTitle>
 
 <h1>ТАБЛИЦА ОСНАСТКИ</h1>
@@ -11,91 +12,91 @@
 <button class="btn btn-primary" @onclick="Create">Создать</button>
 <button class="btn btn-primary" @onclick="Update">Редактировать</button>
 <button class="btn btn-primary" @onclick="Delete">Удалить</button>
-<button class="btn btn-primary" @onclick="OnInitializedAsync">Обновить</button>
-<input type="text" class="textbox" placeholder="Поиск"/>
+<button class="btn btn-primary" @onclick="Refresh">Обновить</button>
+<input type="text" class="textbox" placeholder="Поиск" />
 
-@if (orders == null)
-{
-    <p><em>Загрузка...</em></p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Номер заказа</th>
-                <th>Наименование</th>
-                <th>Количество</th>
-                <th>Статус</th>
-                <th>Дата заказа</th>
-                <th>Автор заказа</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var order in orders)
-            {
-                <tr>
-                    <td>@order.ID</td>
-                    <td>@order.OrderNumber</td>
-                    <td>@order.OrderName</td>
-                    <td>@order.OrderQuantity</td>
-                    <td>@order.OrderStatus</td>
-                    <td>@order.AdmissionDate</td>
-                    <td>@order.OrderAuthor</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<Table>
+    <TableHeader>
+        <TableRow>
+            <TableHeaderCell>ID</TableHeaderCell>
+            <TableHeaderCell>Номер заказа</TableHeaderCell>
+            <TableHeaderCell>Наименование</TableHeaderCell>
+            <TableHeaderCell>Количество</TableHeaderCell>
+            <TableHeaderCell>Статус</TableHeaderCell>
+            <TableHeaderCell>Дата заказа</TableHeaderCell>
+            <TableHeaderCell>Автор заказа</TableHeaderCell>
+        </TableRow>
+    </TableHeader>
+    <TableBody>
+        @foreach (var order in orders)
+        {
+            <TableRow>
+                <TableCell>@order.ID</TableCell>
+                <TableCell>@order.OrderNumber</TableCell>
+                <TableCell>@order.OrderName</TableCell>
+                <TableCell>@order.OrderQuantity</TableCell>
+                <TableCell>@order.OrderStatus</TableCell>
+                <TableCell>@order.AdmissionDate.ToShortDateString()</TableCell>
+                <TableCell>@order.OrderAuthor</TableCell>
+            </TableRow>
+        }
+    </TableBody>
+</Table>
 
 @code {
     private List<Order> orders = new();
     public int currentCount = 0;
+
+    private async Task Refresh()
+    {
+        orders = await OrderService.GetAllOrders();
+        StateHasChanged(); // Принудительное обновление компонента
+    }
 
     private async void Create()
     {
         string number = currentCount.ToString();
         var order = new Order
         {
-                OrderNumber = "ORD - " + number, /// <summary> Номер заказа </summary>
-                OrderName = "Пресс - форма",     /// <summary> Название оснастки </summary>
-                OrderQuantity = 10,              /// <summary> Количество </summary>
-                OrderStatus = "Заказ оформлен",  /// <summary> Статус заказа </summary>
-                AdmissionDate = DateTime.Now,    /// <summary> Дата заказа </summary>
-                OrderAuthor = "Иванов И.И."      /// <summary> Автор заказа </summary>
+            OrderNumber = "ORD - " + number,
+            OrderName = "Пресс - форма",
+            OrderQuantity = 10, // Тип int, но в модели long
+            OrderStatus = "Заказ оформлен",
+            AdmissionDate = DateTime.Now,
+            OrderAuthor = "Иванов И.И."
         };
 
-        await OrderService.CreateOrder(order); /// <summary> Создание </summary>
-        currentCount = currentCount + 1;
+        await OrderService.CreateOrder(order);
+        currentCount++;
+        await Refresh(); // Обновляем данные после создания
     }
 
     private async void Delete()
     {
-        await OrderService.Delete("1"); /// <summary> Удаление </summary>
-        await OrderService.Delete("2"); /// <summary> Удаление </summary>
-        await OrderService.Delete("3"); /// <summary> Удаление </summary>
+        await OrderService.Delete(1); // Удаляем заказ с ID = 1
+        await OrderService.Delete(2); // Удаляем заказ с ID = 2
+        await OrderService.Delete(3); // Удаляем заказ с ID = 3
+        await Refresh(); // Обновляем данные после удаления
     }
 
     private async void Update()
     {
         var updateOrder = new Order
         {
-                OrderNumber = "ORD - 1",        /// <summary> Номер заказа </summary>
-                OrderName = "Штамп",            /// <summary> Название оснастки </summary>
-                OrderQuantity = 5,              /// <summary> Количество </summary>
-                OrderStatus = "Заказ оформлен", /// <summary> Статус заказа </summary>
-                AdmissionDate = DateTime.Now,   /// <summary> Дата заказа </summary>
-                OrderAuthor = "Петров П.П."     /// <summary> Автор заказа</summary>
+            ID = 1, // Указываем ID заказа, который нужно обновить
+            OrderNumber = "ORD - 1",
+            OrderName = "Штамп",
+            OrderQuantity = 5,
+            OrderStatus = "Заказ оформлен",
+            AdmissionDate = DateTime.Now,
+            OrderAuthor = "Петров П.П."
         };
-        await OrderService.Update(updateOrder); /// <summary> Редактирование </summary>
+        await OrderService.Update(updateOrder);
+        await Refresh(); // Обновляем данные после редактирования
     }
 
     protected override async Task OnInitializedAsync()
     {
-        orders = await OrderService.GetAllOrders(); /// <summary> Обновление таблицы </summary>
+        await Refresh(); // Загружаем данные при инициализации
     }
-    
-    
-     
 }
