@@ -25,7 +25,6 @@ namespace FurnitureMovement.Data
         [StringLength(50)]
         public string OrderStatus { get; set; }
 
-        [Column(TypeName = "date")]
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
         public DateTime AdmissionDate { get; set; }
 
