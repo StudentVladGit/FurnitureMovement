@@ -2,64 +2,100 @@
 @using FurnitureMovement.Data
 @using FurnitureMovement.Services
 @inject IOrderService OrderService
-<PageTitle>Counter</PageTitle>
+<PageTitle>ТАБЛИЦА</PageTitle>
 
-<h1>Counter</h1>
+<h1>ТАБЛИЦА ОСНАСТКИ</h1>
 
-<p role="status">Current count: @currentCount1</p>
-
+<p role="status">Current count: @currentCount</p>
 
 <button class="btn btn-primary" @onclick="Create">Создать</button>
 <button class="btn btn-primary" @onclick="Update">Редактировать</button>
 <button class="btn btn-primary" @onclick="Delete">Удалить</button>
+<button class="btn btn-primary" @onclick="OnInitializedAsync">Обновить</button>
 <input type="text" class="textbox" placeholder="Поиск"/>
 
-@code {
-    private int currentCount1 = 300;
+@if (orders == null)
+{
+    <p><em>Загрузка...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Номер заказа</th>
+                <th>Наименование</th>
+                <th>Количество</th>
+                <th>Статус</th>
+                <th>Дата заказа</th>
+                <th>Автор заказа</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in orders)
+            {
+                <tr>
+                    <td>@order.ID</td>
+                    <td>@order.OrderNumber</td>
+                    <td>@order.OrderName</td>
+                    <td>@order.OrderQuantity</td>
+                    <td>@order.OrderStatus</td>
+                    <td>@order.AdmissionDate</td>
+                    <td>@order.OrderAuthor</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
-    public List<Order> myList;
+@code {
+    private List<Order> orders = new();
+    public int currentCount = 0;
 
     private async void Create()
     {
-        string number1 = currentCount1.ToString();
-
-
-        var order1 = new Order
+        string number = currentCount.ToString();
+        var order = new Order
         {
-                Number = number1,                //Номер
-                Drawning = "СХ55",                //Схемы
-                Furniture = "Форма",              //Оснастка
-                AdmissionDate = DateTime.Now,    //Поступление
-                Quantity = 10                   //Количество
+                OrderNumber = "ORD - " + number, /// <summary> Номер заказа </summary>
+                OrderName = "Пресс - форма",     /// <summary> Название оснастки </summary>
+                OrderQuantity = 10,              /// <summary> Количество </summary>
+                OrderStatus = "Заказ оформлен",  /// <summary> Статус заказа </summary>
+                AdmissionDate = DateTime.Now,    /// <summary> Дата заказа </summary>
+                OrderAuthor = "Иванов И.И."      /// <summary> Автор заказа </summary>
         };
 
-        await OrderService.CreateOrder(order1); //Добавление
-
-
-        currentCount1 = currentCount1 + 2;
-
-
+        await OrderService.CreateOrder(order); /// <summary> Создание </summary>
+        currentCount = currentCount + 1;
     }
 
     private async void Delete()
     {
-        await OrderService.Delete("54"); //Удаление
-        await OrderService.Delete("52"); //Удаление
-        await OrderService.Delete("12"); //Удаление
+        await OrderService.Delete("1"); /// <summary> Удаление </summary>
+        await OrderService.Delete("2"); /// <summary> Удаление </summary>
+        await OrderService.Delete("3"); /// <summary> Удаление </summary>
     }
 
     private async void Update()
     {
         var updateOrder = new Order
         {
-                Number = "1",                  //Номер
-                Drawning = "Proizoshla",        //Схемы
-                Furniture = "Zamena",           //Оснастка
-                AdmissionDate = DateTime.Now,   //Поступление
-                Quantity = 30                   //Количество
+                OrderNumber = "ORD - 1",        /// <summary> Номер заказа </summary>
+                OrderName = "Штамп",            /// <summary> Название оснастки </summary>
+                OrderQuantity = 5,              /// <summary> Количество </summary>
+                OrderStatus = "Заказ оформлен", /// <summary> Статус заказа </summary>
+                AdmissionDate = DateTime.Now,   /// <summary> Дата заказа </summary>
+                OrderAuthor = "Петров П.П."     /// <summary> Автор заказа</summary>
         };
-
-        await OrderService.Update(updateOrder); //Обновление
+        await OrderService.Update(updateOrder); /// <summary> Редактирование </summary>
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        orders = await OrderService.GetAllOrders(); /// <summary> Обновление таблицы </summary>
+    }
+    
+    
+     
 }
