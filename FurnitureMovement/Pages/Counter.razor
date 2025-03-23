@@ -13,6 +13,8 @@
 
 <!-- Кнопка "Добавить" -->
 <button class="btn btn-primary" @onclick="ShowAddModal">Добавить</button>
+<button class="btn btn-primary" @onclick="Refresh">Обновить</button>
+<input type="text" class="textbox" placeholder="Поиск" @bind="searchText" @oninput="OnSearchInput" />
 
 <!-- Модальное окно для добавления данных -->
 <Modal @ref="addModal">
@@ -33,19 +35,26 @@
             </Field>
             <Field>
                 <FieldLabel>Количество</FieldLabel>
-                <NumericEdit TValue="long" @bind-Value="newOrder.OrderQuantity" />
+                <NumericEdit TValue="long" @bind-Value="newOrder.OrderQuantity" Min="0" />
             </Field>
             <Field>
                 <FieldLabel>Статус</FieldLabel>
-                <TextEdit @bind-Text="newOrder.OrderStatus" />
-            </Field>
-            <Field>
-                <FieldLabel>Дата заказа</FieldLabel>
-                <DateEdit @bind-Date="newOrder.AdmissionDate" />
+                <Select TValue="string" @bind-SelectedValue="newOrder.OrderStatus">
+                    <SelectItem>Сформирован</SelectItem>
+                    <SelectItem>Оформлен</SelectItem>
+                    <SelectItem>В процессе изготовления</SelectItem>
+                    <SelectItem>Изготовлено</SelectItem>
+                    <SelectItem>Выполнен</SelectItem>
+                    <SelectItem>Отменен</SelectItem>
+                </Select>
             </Field>
             <Field>
                 <FieldLabel>Автор заказа</FieldLabel>
-                <TextEdit @bind-Text="newOrder.OrderAuthor" />
+                <Select TValue="string" @bind-SelectedValue="newOrder.OrderAuthor">
+                    <SelectItem>Шульженко В.М.</SelectItem>
+                    <SelectItem>Иванов И.И.</SelectItem>
+                    <SelectItem>Петров П.П.</SelectItem>
+                </Select>
             </Field>
         </ModalBody>
         <ModalFooter>
@@ -55,7 +64,6 @@
     </ModalContent>
 </Modal>
 
-<!-- Таблица с данными -->
 <DataGrid TItem="Order"
           Data="@orders"
           ReadData="@OnReadData"
@@ -84,20 +92,19 @@
     private List<Order> orders = new();
     private int totalOrders;
     private int currentCount = 0;
+    private string searchText = string.Empty;
 
     // Модальное окно
     private Modal addModal;
     private Order newOrder = new();
 
-    protected override async Task OnInitializedAsync()
-    {
-        await Refresh(); // Загружаем данные при инициализации
-    }
-
     // Показать модальное окно
     private void ShowAddModal()
     {
-        newOrder = new Order(); // Сбросить данные формы
+        newOrder = new Order
+            {
+                AdmissionDate = DateTime.Now // Устанавливаем текущую дату
+            };
         addModal.Show();
     }
 
@@ -113,6 +120,11 @@
         await OrderService.CreateOrder(newOrder); // Сохранить новый заказ
         await Refresh(); // Обновить таблицу
         addModal.Hide(); // Закрыть модальное окно
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh(); // Загружаем данные при инициализации
     }
 
     private async Task OnReadData(DataGridReadDataEventArgs<Order> e)
@@ -133,5 +145,11 @@
     {
         await LoadData();
         StateHasChanged(); // Принудительное обновление компонента
+    }
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        searchText = e.Value.ToString();
+        await LoadData(); // Перезагружаем данные с учетом поиска
     }
 }

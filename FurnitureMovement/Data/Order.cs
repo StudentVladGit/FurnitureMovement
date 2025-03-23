@@ -3,6 +3,21 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FurnitureMovement.Data
 {
+    public enum OrderStatus
+    {
+        Сформирован,
+        Оформлен,
+        ВПроцессеИзготовления,
+        Изготовлено,
+        Выполнен,
+        Отменен
+    }
+    public enum OrderAuthor
+    {
+        ШульженкоВМ,
+        ИвановИИ,
+        ПетровПП
+    }
     public class Order
     {
         [Key]
