@@ -8,12 +8,29 @@ namespace FurnitureMovement.Data
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Display(Name = "#")]
-        public string Number {  get; set; } //Номер
-        public string Drawning { get; set; } //Схемы
-        public string Furniture { get; set; } //Оснастка
-        public DateTime AdmissionDate { get; set; } //Поступление
-        public long Quantity { get; set; } //Количество
+        public int ID { get; set; }
 
+        [Required]
+        [StringLength(50)]
+        public string OrderNumber { get; set; }
 
+        [Required]
+        [StringLength(50)]
+        public string OrderName { get; set; }
+
+        [Range(1, 99999)]
+        public long OrderQuantity { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string OrderStatus { get; set; }
+
+        [Column(TypeName = "date")]
+        [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
+        public DateTime AdmissionDate { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string OrderAuthor { get; set; }
     }
 }

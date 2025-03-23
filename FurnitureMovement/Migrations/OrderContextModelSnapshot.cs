@@ -24,25 +24,39 @@ namespace FurnitureMovement.Migrations
 
             modelBuilder.Entity("FurnitureMovement.Data.Order", b =>
                 {
-                    b.Property<string>("Number")
+                    b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("text");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
 
                     b.Property<DateTime>("AdmissionDate")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("date");
 
-                    b.Property<string>("Drawning")
+                    b.Property<string>("OrderAuthor")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
-                    b.Property<string>("Furniture")
+                    b.Property<string>("OrderName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
-                    b.Property<long>("Quantity")
+                    b.Property<string>("OrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<long>("OrderQuantity")
                         .HasColumnType("bigint");
 
-                    b.HasKey("Number");
+                    b.Property<string>("OrderStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("ID");
 
                     b.ToTable("Orders");
                 });

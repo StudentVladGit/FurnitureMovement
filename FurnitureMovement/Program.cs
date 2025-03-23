@@ -11,6 +11,15 @@ using Blazorise.Icons.FontAwesome;//Добавили
 
 var builder = WebApplication.CreateBuilder(args);
 
+//Добавили
+builder.Services
+    .AddBlazorise(options =>
+    {
+        options.Immediate = true;
+    })
+    .AddBootstrap5Providers()
+    .AddFontAwesomeIcons();
+
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
@@ -49,11 +58,4 @@ app.MapFallbackToPage("/_Host");
 
 app.Run();
 
-//Добавили
-builder.Services
-    .AddBlazorise(options =>
-    {
-        options.Immediate = true;
-    })
-    .AddBootstrap5Providers()
-    .AddFontAwesomeIcons();
+

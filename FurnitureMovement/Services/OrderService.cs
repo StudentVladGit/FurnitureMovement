@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace FurnitureMovement.Services;
 
-public class OrderService: IOrderService
+public class OrderService : IOrderService
 {
     private readonly DbContextOptions<OrderContext> _myFactory;
 
@@ -35,7 +35,7 @@ public class OrderService: IOrderService
     }
 
     // Delete
-    public async Task Delete(string id)
+    public async Task Delete(int id)
     {
         using (var context = CreateDbContext())
         {
@@ -83,5 +83,5 @@ public interface IOrderService
     Task<List<Order>> GetAllOrders();
     //Task<Order> GetOrderById(int id);
     Task Update(Order updatedOrder);
-    Task Delete(string id);
+    Task Delete(int id);
 }

@@ -1,65 +1,137 @@
 ﻿@page "/counter"
 @using FurnitureMovement.Data
 @using FurnitureMovement.Services
+@using Blazorise
+@using Blazorise.DataGrid
 @inject IOrderService OrderService
-<PageTitle>Counter</PageTitle>
 
-<h1>Counter</h1>
+<PageTitle>ТАБЛИЦА</PageTitle>
 
-<p role="status">Current count: @currentCount1</p>
+<h1>ТАБЛИЦА ОСНАСТКИ</h1>
 
+<p role="status">Current count: @currentCount</p>
 
-<button class="btn btn-primary" @onclick="Create">Создать</button>
-<button class="btn btn-primary" @onclick="Update">Редактировать</button>
-<button class="btn btn-primary" @onclick="Delete">Удалить</button>
-<input type="text" class="textbox" placeholder="Поиск"/>
+<!-- Кнопка "Добавить" -->
+<button class="btn btn-primary" @onclick="ShowAddModal">Добавить</button>
+
+<!-- Модальное окно для добавления данных -->
+<Modal @ref="addModal">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Добавить новый заказ</ModalTitle>
+            <CloseButton @onclick="HideAddModal" />
+        </ModalHeader>
+        <ModalBody>
+            <!-- Поля для ввода данных -->
+            <Field>
+                <FieldLabel>Номер заказа</FieldLabel>
+                <TextEdit @bind-Text="newOrder.OrderNumber" />
+            </Field>
+            <Field>
+                <FieldLabel>Наименование</FieldLabel>
+                <TextEdit @bind-Text="newOrder.OrderName" />
+            </Field>
+            <Field>
+                <FieldLabel>Количество</FieldLabel>
+                <NumericEdit TValue="long" @bind-Value="newOrder.OrderQuantity" />
+            </Field>
+            <Field>
+                <FieldLabel>Статус</FieldLabel>
+                <TextEdit @bind-Text="newOrder.OrderStatus" />
+            </Field>
+            <Field>
+                <FieldLabel>Дата заказа</FieldLabel>
+                <DateEdit @bind-Date="newOrder.AdmissionDate" />
+            </Field>
+            <Field>
+                <FieldLabel>Автор заказа</FieldLabel>
+                <TextEdit @bind-Text="newOrder.OrderAuthor" />
+            </Field>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
+            <Button Color="Color.Primary" @onclick="SaveOrder">Сохранить</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+<!-- Таблица с данными -->
+<DataGrid TItem="Order"
+          Data="@orders"
+          ReadData="@OnReadData"
+          PageSize="10"
+          TotalItems="@totalOrders"
+          ShowPager="true"
+          Sortable="true"
+          Filterable="false"
+          Responsive="true">
+    <DataGridColumns>
+        <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" Sortable="true" />
+        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер заказа" Sortable="true" />
+        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderName)" Caption="Наименование" Sortable="true" />
+        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderQuantity)" Caption="Количество" Sortable="true" />
+        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderStatus)" Caption="Статус" Sortable="true" />
+        <DataGridColumn TItem="Order" Field="@nameof(Order.AdmissionDate)" Caption="Дата заказа" Sortable="true">
+            <DisplayTemplate>
+                @context.AdmissionDate.ToShortDateString()
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderAuthor)" Caption="Автор заказа" Sortable="true" />
+    </DataGridColumns>
+</DataGrid>
 
 @code {
-    private int currentCount1 = 300;
+    private List<Order> orders = new();
+    private int totalOrders;
+    private int currentCount = 0;
 
-    public List<Order> myList;
+    // Модальное окно
+    private Modal addModal;
+    private Order newOrder = new();
 
-    private async void Create()
+    protected override async Task OnInitializedAsync()
     {
-        string number1 = currentCount1.ToString();
-
-
-        var order1 = new Order
-        {
-                Number = number1,                //Номер
-                Drawning = "СХ55",                //Схемы
-                Furniture = "Форма",              //Оснастка
-                AdmissionDate = DateTime.Now,    //Поступление
-                Quantity = 10                   //Количество
-        };
-
-        await OrderService.CreateOrder(order1); //Добавление
-
-
-        currentCount1 = currentCount1 + 2;
-
-
+        await Refresh(); // Загружаем данные при инициализации
     }
 
-    private async void Delete()
+    // Показать модальное окно
+    private void ShowAddModal()
     {
-        await OrderService.Delete("54"); //Удаление
-        await OrderService.Delete("52"); //Удаление
-        await OrderService.Delete("12"); //Удаление
+        newOrder = new Order(); // Сбросить данные формы
+        addModal.Show();
     }
 
-    private async void Update()
+    // Скрыть модальное окно
+    private void HideAddModal()
     {
-        var updateOrder = new Order
-        {
-                Number = "1",                  //Номер
-                Drawning = "Proizoshla",        //Схемы
-                Furniture = "Zamena",           //Оснастка
-                AdmissionDate = DateTime.Now,   //Поступление
-                Quantity = 30                   //Количество
-        };
-
-        await OrderService.Update(updateOrder); //Обновление
+        addModal.Hide();
     }
 
+    // Сохранить данные
+    private async Task SaveOrder()
+    {
+        await OrderService.CreateOrder(newOrder); // Сохранить новый заказ
+        await Refresh(); // Обновить таблицу
+        addModal.Hide(); // Закрыть модальное окно
+    }
+
+    private async Task OnReadData(DataGridReadDataEventArgs<Order> e)
+    {
+        // Загрузка данных с учетом пагинации, сортировки и фильтрации
+        await LoadData(e.Page, e.PageSize, e.Columns);
+    }
+
+    private async Task LoadData(int page = 1, int pageSize = 10, IEnumerable<DataGridColumnInfo> columns = null)
+    {
+        // Пример загрузки данных из сервиса
+        var response = await OrderService.GetAllOrders();
+        orders = response;
+        totalOrders = orders.Count;
+    }
+
+    private async Task Refresh()
+    {
+        await LoadData();
+        StateHasChanged(); // Принудительное обновление компонента
+    }
 }
