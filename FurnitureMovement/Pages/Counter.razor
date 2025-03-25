@@ -9,9 +9,8 @@
 
 <h1>ТАБЛИЦА ОСНАСТКИ</h1>
 
-<Button Color="Color.Primary" Clicked="@(() => showAddModal = true)" Class="mb-3">
-    Добавить заказ
-</Button>
+<!-- Кнопка "Добавить" -->
+<button class="btn btn-primary" @onclick="ShowAddModal">Добавить</button>
 
 @if (orders == null)
 {
@@ -46,49 +45,109 @@ else
     </DataGrid>
 }
 
-<!-- Модальное окно для добавления заказа -->
-<Modal @ref="addModal" Visible="@showAddModal" VisibleChanged="@((v) => showAddModal = v)">
+<!-- Модальное окно для добавления данных -->
+<Modal @ref="addModal">
     <ModalContent>
         <ModalHeader>
             <ModalTitle>Добавить новый заказ</ModalTitle>
-            <CloseButton Clicked="@(() => showAddModal = false)" />
+            <CloseButton @onclick="HideAddModal" />
         </ModalHeader>
         <ModalBody>
-            <!-- Здесь будет форма для добавления заказа -->
-            <p>Форма будет добавлена позже</p>
+            <!-- Поля для ввода данных -->
+            <Field>
+                <FieldLabel>Номер заказа</FieldLabel>
+                <TextEdit @bind-Text="newOrder.OrderNumber" />
+            </Field>
+            <Field>
+                <FieldLabel>Наименование</FieldLabel>
+                <TextEdit @bind-Text="newOrder.OrderName" />
+            </Field>
+            <Field>
+                <FieldLabel>Количество</FieldLabel>
+                <NumericEdit TValue="long" @bind-Value="newOrder.OrderQuantity" />
+            </Field>
+            <Field>
+                <FieldLabel>Статус</FieldLabel>
+                <Select TValue="OrderStatus" @bind-SelectedValue="newOrder.OrderStatus">
+                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                    {
+                        <SelectItem TValue="OrderStatus" Value="@status">@status.ToString()</SelectItem>
+                    }
+                </Select>
+            </Field>
+            <Field>
+                <FieldLabel>Дата заказа</FieldLabel>
+                <DateEdit @bind-Date="newOrder.AdmissionDate" />
+            </Field>
+            <Field>
+                <FieldLabel>Автор заказа</FieldLabel>
+                <Select TValue="OrderAuthor" @bind-SelectedValue="newOrder.OrderAuthor">
+                    @foreach (OrderAuthor author in Enum.GetValues(typeof(OrderAuthor)))
+                    {
+                        <SelectItem TValue="OrderAuthor" Value="@author">@author.ToString()</SelectItem>
+                    }
+                </Select>
+            </Field>
         </ModalBody>
         <ModalFooter>
-            <Button Color="Color.Secondary" Clicked="@(() => showAddModal = false)">
-                Отмена
-            </Button>
-            <Button Color="Color.Primary" Clicked="@SaveOrder">
-                Сохранить
-            </Button>
+            <Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
+            <Button Color="Color.Primary" @onclick="SaveOrder">Сохранить</Button>
         </ModalFooter>
     </ModalContent>
 </Modal>
 
 @code {
-    private List<Order> orders;
-    private bool showAddModal = false;
-    private Modal addModal;
+    private List<Order> orders = new();
+    private int totalOrders;
+    private int currentCount = 0;
 
-    private Order newOrder = new Order(); // Для хранения данных нового заказа
+    // Модальное окно
+    private Modal addModal;
+    private Order newOrder = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadOrders();
+        await Refresh(); // Загружаем данные при инициализации
     }
 
-    private async Task LoadOrders()
+    // Показать модальное окно
+    private void ShowAddModal()
     {
-        orders = await OrderService.GetAllOrders();
+        newOrder = new Order(); // Сбросить данные формы
+        addModal.Show();
     }
 
+    // Скрыть модальное окно
+    private void HideAddModal()
+    {
+        addModal.Hide();
+    }
+
+    // Сохранить данные
     private async Task SaveOrder()
     {
-        // Логика сохранения заказа
-        showAddModal = false;
-        await LoadOrders(); // Перезагружаем данные после сохранения
+        await OrderService.CreateOrder(newOrder); // Сохранить новый заказ
+        await Refresh(); // Обновить таблицу
+        addModal.Hide(); // Закрыть модальное окно
+    }
+
+    private async Task OnReadData(DataGridReadDataEventArgs<Order> e)
+    {
+        // Загрузка данных с учетом пагинации, сортировки и фильтрации
+        await LoadData(e.Page, e.PageSize, e.Columns);
+    }
+
+    private async Task LoadData(int page = 1, int pageSize = 10, IEnumerable<DataGridColumnInfo> columns = null)
+    {
+        // Пример загрузки данных из сервиса
+        var response = await OrderService.GetAllOrders();
+        orders = response;
+        totalOrders = orders.Count;
+    }
+
+    private async Task Refresh()
+    {
+        await LoadData();
+        StateHasChanged(); // Принудительное обновление компонента
     }
 }
