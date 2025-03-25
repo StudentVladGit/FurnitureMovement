@@ -9,147 +9,86 @@
 
 <h1>ТАБЛИЦА ОСНАСТКИ</h1>
 
-<p role="status">Current count: @currentCount</p>
+<Button Color="Color.Primary" Clicked="@(() => showAddModal = true)" Class="mb-3">
+    Добавить заказ
+</Button>
 
-<!-- Кнопка "Добавить" -->
-<button class="btn btn-primary" @onclick="ShowAddModal">Добавить</button>
-<button class="btn btn-primary" @onclick="Refresh">Обновить</button>
-<input type="text" class="textbox" placeholder="Поиск" @bind="searchText" @oninput="OnSearchInput" />
+@if (orders == null)
+{
+    <p>Загрузка данных...</p>
+}
+else
+{
+    <DataGrid TItem="Order"
+              Data="@orders"
+              ShowPager="true">
+        <DataGridColumns>
+            <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер" />
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderName)" Caption="Наименование" />
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderQuantity)" Caption="Количество" />
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderStatus)" Caption="Статус">
+                <DisplayTemplate Context="order">
+                    @Enum.GetName(typeof(OrderStatus), order.OrderStatus)
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="Order" Field="@nameof(Order.AdmissionDate)" Caption="Дата">
+                <DisplayTemplate Context="order">
+                    @order.AdmissionDate.ToString("dd/MM/yyyy")
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderAuthor)" Caption="Автор">
+                <DisplayTemplate Context="order">
+                    @Enum.GetName(typeof(OrderAuthor), order.OrderAuthor)
+                </DisplayTemplate>
+            </DataGridColumn>
+        </DataGridColumns>
+    </DataGrid>
+}
 
-<!-- Модальное окно для добавления данных -->
-<Modal @ref="addModal">
+<!-- Модальное окно для добавления заказа -->
+<Modal @ref="addModal" Visible="@showAddModal" VisibleChanged="@((v) => showAddModal = v)">
     <ModalContent>
         <ModalHeader>
             <ModalTitle>Добавить новый заказ</ModalTitle>
-            <CloseButton @onclick="HideAddModal" />
+            <CloseButton Clicked="@(() => showAddModal = false)" />
         </ModalHeader>
         <ModalBody>
-            <!-- Поля для ввода данных -->
-            <Field>
-                <FieldLabel>Номер заказа</FieldLabel>
-                <TextEdit @bind-Text="newOrder.OrderNumber" />
-            </Field>
-            <Field>
-                <FieldLabel>Наименование</FieldLabel>
-                <TextEdit @bind-Text="newOrder.OrderName" />
-            </Field>
-            <Field>
-                <FieldLabel>Количество</FieldLabel>
-                <NumericEdit TValue="long" @bind-Value="newOrder.OrderQuantity" Min="0" />
-            </Field>
-            <Field>
-                <FieldLabel>Статус</FieldLabel>
-                <Select TValue="string" @bind-SelectedValue="newOrder.OrderStatus">
-                    <SelectItem>Сформирован</SelectItem>
-                    <SelectItem>Оформлен</SelectItem>
-                    <SelectItem>В процессе изготовления</SelectItem>
-                    <SelectItem>Изготовлено</SelectItem>
-                    <SelectItem>Выполнен</SelectItem>
-                    <SelectItem>Отменен</SelectItem>
-                </Select>
-            </Field>
-            <Field>
-                <FieldLabel>Автор заказа</FieldLabel>
-                <Select TValue="string" @bind-SelectedValue="newOrder.OrderAuthor">
-                    <SelectItem>Шульженко В.М.</SelectItem>
-                    <SelectItem>Иванов И.И.</SelectItem>
-                    <SelectItem>Петров П.П.</SelectItem>
-                </Select>
-            </Field>
+            <!-- Здесь будет форма для добавления заказа -->
+            <p>Форма будет добавлена позже</p>
         </ModalBody>
         <ModalFooter>
-            <Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
-            <Button Color="Color.Primary" @onclick="SaveOrder">Сохранить</Button>
+            <Button Color="Color.Secondary" Clicked="@(() => showAddModal = false)">
+                Отмена
+            </Button>
+            <Button Color="Color.Primary" Clicked="@SaveOrder">
+                Сохранить
+            </Button>
         </ModalFooter>
     </ModalContent>
 </Modal>
 
-<DataGrid TItem="Order"
-          Data="@orders"
-          ReadData="@OnReadData"
-          PageSize="10"
-          TotalItems="@totalOrders"
-          ShowPager="true"
-          Sortable="true"
-          Filterable="false"
-          Responsive="true">
-    <DataGridColumns>
-        <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" Sortable="true" />
-        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер заказа" Sortable="true" />
-        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderName)" Caption="Наименование" Sortable="true" />
-        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderQuantity)" Caption="Количество" Sortable="true" />
-        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderStatus)" Caption="Статус" Sortable="true" />
-        <DataGridColumn TItem="Order" Field="@nameof(Order.AdmissionDate)" Caption="Дата заказа" Sortable="true">
-            <DisplayTemplate>
-                @context.AdmissionDate.ToShortDateString()
-            </DisplayTemplate>
-        </DataGridColumn>
-        <DataGridColumn TItem="Order" Field="@nameof(Order.OrderAuthor)" Caption="Автор заказа" Sortable="true" />
-    </DataGridColumns>
-</DataGrid>
-
 @code {
-    private List<Order> orders = new();
-    private int totalOrders;
-    private int currentCount = 0;
-    private string searchText = string.Empty;
-
-    // Модальное окно
+    private List<Order> orders;
+    private bool showAddModal = false;
     private Modal addModal;
-    private Order newOrder = new();
 
-    // Показать модальное окно
-    private void ShowAddModal()
-    {
-        newOrder = new Order
-            {
-                AdmissionDate = DateTime.Now // Устанавливаем текущую дату
-            };
-        addModal.Show();
-    }
-
-    // Скрыть модальное окно
-    private void HideAddModal()
-    {
-        addModal.Hide();
-    }
-
-    // Сохранить данные
-    private async Task SaveOrder()
-    {
-        await OrderService.CreateOrder(newOrder); // Сохранить новый заказ
-        await Refresh(); // Обновить таблицу
-        addModal.Hide(); // Закрыть модальное окно
-    }
+    private Order newOrder = new Order(); // Для хранения данных нового заказа
 
     protected override async Task OnInitializedAsync()
     {
-        await Refresh(); // Загружаем данные при инициализации
+        await LoadOrders();
     }
 
-    private async Task OnReadData(DataGridReadDataEventArgs<Order> e)
+    private async Task LoadOrders()
     {
-        // Загрузка данных с учетом пагинации, сортировки и фильтрации
-        await LoadData(e.Page, e.PageSize, e.Columns);
+        orders = await OrderService.GetAllOrders();
     }
 
-    private async Task LoadData(int page = 1, int pageSize = 10, IEnumerable<DataGridColumnInfo> columns = null)
+    private async Task SaveOrder()
     {
-        // Пример загрузки данных из сервиса
-        var response = await OrderService.GetAllOrders();
-        orders = response;
-        totalOrders = orders.Count;
-    }
-
-    private async Task Refresh()
-    {
-        await LoadData();
-        StateHasChanged(); // Принудительное обновление компонента
-    }
-
-    private async Task OnSearchInput(ChangeEventArgs e)
-    {
-        searchText = e.Value.ToString();
-        await LoadData(); // Перезагружаем данные с учетом поиска
+        // Логика сохранения заказа
+        showAddModal = false;
+        await LoadOrders(); // Перезагружаем данные после сохранения
     }
 }

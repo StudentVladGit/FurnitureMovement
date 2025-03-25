@@ -33,10 +33,9 @@ namespace FurnitureMovement.Migrations
                     b.Property<DateTime>("AdmissionDate")
                         .HasColumnType("date");
 
-                    b.Property<string>("OrderAuthor")
-                        .IsRequired()
+                    b.Property<int>("OrderAuthor")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("integer");
 
                     b.Property<string>("OrderName")
                         .IsRequired()
@@ -51,10 +50,9 @@ namespace FurnitureMovement.Migrations
                     b.Property<long>("OrderQuantity")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("OrderStatus")
-                        .IsRequired()
+                    b.Property<int>("OrderStatus")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("integer");
 
                     b.HasKey("ID");
 

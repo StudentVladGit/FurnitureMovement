@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddNewColumn : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,9 +21,9 @@ namespace FurnitureMovement.Migrations
                     OrderNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     OrderName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     OrderQuantity = table.Column<long>(type: "bigint", nullable: false),
-                    OrderStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    OrderStatus = table.Column<int>(type: "integer", maxLength: 50, nullable: false),
                     AdmissionDate = table.Column<DateTime>(type: "date", nullable: false),
-                    OrderAuthor = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                    OrderAuthor = table.Column<int>(type: "integer", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {

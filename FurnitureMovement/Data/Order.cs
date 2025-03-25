@@ -38,7 +38,7 @@ namespace FurnitureMovement.Data
 
         [Required]
         [StringLength(50)]
-        public string OrderStatus { get; set; }
+        public OrderStatus OrderStatus { get; set; }
 
         [Column(TypeName = "date")]
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
@@ -46,6 +46,6 @@ namespace FurnitureMovement.Data
 
         [Required]
         [StringLength(50)]
-        public string OrderAuthor { get; set; }
+        public OrderAuthor OrderAuthor { get; set; }
     }
 }
