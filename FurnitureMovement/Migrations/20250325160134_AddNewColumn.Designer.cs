@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20250316092041_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250325160134_AddNewColumn")]
+    partial class AddNewColumn
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
