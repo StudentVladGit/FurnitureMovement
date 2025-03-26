@@ -1,13 +1,35 @@
 ﻿@page "/fetchdata"
-@using FurnitureMovement.Data
-@using FurnitureMovement.Services
-@inject WeatherForecastService ForecastService
-@inject IOrderService OrderService
+@using Blazorise
 
-<PageTitle>Оснастка</PageTitle>
+<Button Color="Color.Primary" @onclick="ShowModal">Test Blazorise Modal</Button>
 
-<h1>Заказ оснастки</h1>
+<Modal @ref="modalRef">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Test Modal</ModalTitle>
+            <CloseButton @onclick="HideModal" />
+        </ModalHeader>
+        <ModalBody>
+            <p>If you see this, Blazorise works!</p>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideModal">Close</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
 
 @code {
+    private Modal modalRef;
 
+    private void ShowModal()
+    {
+        Console.WriteLine("Show modal called");
+        modalRef?.Show();
+    }
+
+    private void HideModal()
+    {
+        Console.WriteLine("Hide modal called");
+        modalRef?.Hide();
+    }
 }

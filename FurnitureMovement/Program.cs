@@ -4,24 +4,24 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 
-using Blazorise;//Добавили
-using Blazorise.Bootstrap5;//Добавили
-using Blazorise.Icons.FontAwesome;//Добавили
+using Blazorise;
+using Blazorise.Bootstrap;
+using Blazorise.Icons.FontAwesome;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //Добавили
 builder.Services
-    .AddBlazorise(options =>
-    {
-        options.Immediate = true;
+    .AddBlazorise(options => {
+        options.Immediate = true; // Для мгновенного отклика UI
     })
-    .AddBootstrap5Providers()
+    .AddBootstrapProviders()
     .AddFontAwesomeIcons();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+
 builder.Services.AddSingleton<WeatherForecastService>();
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);

@@ -45,8 +45,7 @@ else
     </DataGrid>
 }
 
-<!-- Модальное окно для добавления данных -->
-@* <Modal @ref="addModal">
+<Modal @ref="addModal">
     <ModalContent>
         <ModalHeader>
             <ModalTitle>Добавить новый заказ</ModalTitle>
@@ -89,7 +88,7 @@ else
             <Button Color="Color.Primary" @onclick="SaveOrder">Сохранить</Button>
         </ModalFooter>
     </ModalContent>
-</Modal> *@
+</Modal>
 
 @code {
 
@@ -97,7 +96,7 @@ else
     private int totalOrders;
 
     // Модальное окно
-    private Modal addModal;
+    private Modal addModal = new();
     private Order newOrder = new();
     private OrderFurniture newOrderFurniture = new()
         {
@@ -140,7 +139,7 @@ else
 
         await OrderService.CreateOrder(newOrder, newOrderFurniture);
         await Refresh(); // Обновить таблицу
-        addModal.Hide(); // Закрыть модальное окно
+        await addModal.Hide(); // Закрыть модальное окно
     }
 
     private async Task OnReadData(DataGridReadDataEventArgs<Order> e)
