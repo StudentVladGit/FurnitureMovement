@@ -7,29 +7,32 @@ using System.Runtime.InteropServices;
 
 namespace FurnitureMovement.Services;
 
+public interface IOrderService
+{
+    Task CreateOrder(Order newOrder, OrderFurniture newOrderFurniture);
+    Task<List<Order>> GetAllOrders();
+    Task Update(Order updatedOrder);
+    Task Delete(int id);
+}
+
 public class OrderService : IOrderService
 {
-    private readonly DbContextOptions<OrderContext> _myFactory;
+    private IDbContextFactory<OrderContext> _myFactory;
 
-    public OrderService(DbContextOptions<OrderContext> myFactory)
+    public OrderService(IDbContextFactory<OrderContext> myFactory)
     {
         _myFactory = myFactory;
     }
-    private OrderContext CreateDbContext()
-    {
-        return new OrderContext(_myFactory);
-    }
-
+    
     //Create
-    public async Task CreateOrder(Order newOrder)
+    public async Task CreateOrder(Order newOrder, OrderFurniture newOrderFurniture)
     {
-        //using var context = _myFactory.CreateDbContext();
-        //await context.Orders.AddAsync(newOrder);
-        //await context.SaveChangesAsync();
-
-        using (var context = CreateDbContext())
+        using (var context = _myFactory.CreateDbContext())
         {
-            context.Orders.Add(newOrder);
+            newOrder.Orders = new List<OrderFurniture> { newOrderFurniture };
+            newOrderFurniture.Order = newOrder;
+
+            await context.Orders.AddAsync(newOrder);
             await context.SaveChangesAsync();
         }
     }
@@ -37,7 +40,7 @@ public class OrderService : IOrderService
     // Delete
     public async Task Delete(int id)
     {
-        using (var context = CreateDbContext())
+        using (var context = _myFactory.CreateDbContext())
         {
             var order = await context.Orders.FindAsync(id);
             if (order != null)
@@ -51,37 +54,19 @@ public class OrderService : IOrderService
     //Read
     public async Task<List<Order>> GetAllOrders()
     {
-        using (var context = CreateDbContext())
+        using (var context = _myFactory.CreateDbContext())
         {
-            return await context.Orders.ToListAsync();
+            return await context.Orders.Include(o => o.Orders).ToListAsync();
         }
     }
-
-    //public async Task<Order> GetOrderById(int id)
-    //{
-    //    using var context = _myFactory.CreateDbContext();
-    //    return await context.Orders.FindAsync(id);
-    //}
 
     // Update
     public async Task Update(Order updatedOrder)
     {
-        using (var context = CreateDbContext())
+        using (var context = _myFactory.CreateDbContext())
         {
             context.Orders.Update(updatedOrder);
             await context.SaveChangesAsync();
         }
     }
-
-
-}
-
-
-public interface IOrderService
-{
-    Task CreateOrder(Order newOrder);
-    Task<List<Order>> GetAllOrders();
-    //Task<Order> GetOrderById(int id);
-    Task Update(Order updatedOrder);
-    Task Delete(int id);
 }

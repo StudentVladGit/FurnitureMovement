@@ -25,20 +25,20 @@ else
             <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
             <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер" />
             <DataGridColumn TItem="Order" Field="@nameof(Order.OrderName)" Caption="Наименование" />
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderQuantity)" Caption="Количество" />
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderStatus)" Caption="Статус">
+            <DataGridColumn TItem="OrderFurniture" Field="@nameof(OrderFurniture.OrderQuantity)" Caption="Количество" />
+            <DataGridColumn TItem="Order" Caption="Статус">
                 <DisplayTemplate Context="order">
-                    @Enum.GetName(typeof(OrderStatus), order.OrderStatus)
+                    @(order.Orders?.FirstOrDefault()?.OrderQuantity.ToString() ?? "0")
                 </DisplayTemplate>
             </DataGridColumn>
-            <DataGridColumn TItem="Order" Field="@nameof(Order.AdmissionDate)" Caption="Дата">
+            <DataGridColumn TItem="Order" Caption="Дата">
                 <DisplayTemplate Context="order">
-                    @order.AdmissionDate.ToString("dd/MM/yyyy")
+                    @(order.Orders?.FirstOrDefault()?.AdmissionDate.ToString("dd/MM/yyyy") ?? "")
                 </DisplayTemplate>
             </DataGridColumn>
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderAuthor)" Caption="Автор">
+            <DataGridColumn TItem="Order" Caption="Автор">
                 <DisplayTemplate Context="order">
-                    @Enum.GetName(typeof(OrderAuthor), order.OrderAuthor)
+                    @(order.Orders?.FirstOrDefault()?.OrderAuthor ?? "")
                 </DisplayTemplate>
             </DataGridColumn>
         </DataGridColumns>
@@ -46,7 +46,7 @@ else
 }
 
 <!-- Модальное окно для добавления данных -->
-<Modal @ref="addModal">
+@* <Modal @ref="addModal">
     <ModalContent>
         <ModalHeader>
             <ModalTitle>Добавить новый заказ</ModalTitle>
@@ -64,11 +64,11 @@ else
             </Field>
             <Field>
                 <FieldLabel>Количество</FieldLabel>
-                <NumericEdit TValue="long" @bind-Value="newOrder.OrderQuantity" />
+                <NumericEdit TValue="long" @bind-Value="newOrderFurniture.OrderQuantity" />
             </Field>
             <Field>
                 <FieldLabel>Статус</FieldLabel>
-                <Select TValue="OrderStatus" @bind-SelectedValue="newOrder.OrderStatus">
+                <Select TValue="OrderStatus" @bind-SelectedValue="newOrderFurniture.OrderStatus">
                     @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
                     {
                         <SelectItem TValue="OrderStatus" Value="@status">@status.ToString()</SelectItem>
@@ -76,17 +76,12 @@ else
                 </Select>
             </Field>
             <Field>
-                <FieldLabel>Дата заказа</FieldLabel>
-                <DateEdit @bind-Date="newOrder.AdmissionDate" />
+                <FieldLabel>Дата</FieldLabel>
+                <DateEdit @bind-Date="newOrderFurniture.AdmissionDate" />
             </Field>
             <Field>
-                <FieldLabel>Автор заказа</FieldLabel>
-                <Select TValue="OrderAuthor" @bind-SelectedValue="newOrder.OrderAuthor">
-                    @foreach (OrderAuthor author in Enum.GetValues(typeof(OrderAuthor)))
-                    {
-                        <SelectItem TValue="OrderAuthor" Value="@author">@author.ToString()</SelectItem>
-                    }
-                </Select>
+                <FieldLabel>Автор</FieldLabel>
+                <TextEdit @bind-Text="newOrderFurniture.OrderAuthor" />
             </Field>
         </ModalBody>
         <ModalFooter>
@@ -94,16 +89,23 @@ else
             <Button Color="Color.Primary" @onclick="SaveOrder">Сохранить</Button>
         </ModalFooter>
     </ModalContent>
-</Modal>
+</Modal> *@
 
 @code {
+
     private List<Order> orders = new();
     private int totalOrders;
-    private int currentCount = 0;
 
     // Модальное окно
     private Modal addModal;
     private Order newOrder = new();
+    private OrderFurniture newOrderFurniture = new()
+        {
+            OrderStatus = OrderStatus.Generated,
+            AdmissionDate = DateTime.Today,
+            OrderQuantity = 1
+        };
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,6 +116,12 @@ else
     private void ShowAddModal()
     {
         newOrder = new Order(); // Сбросить данные формы
+        newOrderFurniture = new OrderFurniture
+            {
+                OrderStatus = OrderStatus.Generated,
+                AdmissionDate = DateTime.Today,
+                OrderQuantity = 1
+            };
         addModal.Show();
     }
 
@@ -126,7 +134,11 @@ else
     // Сохранить данные
     private async Task SaveOrder()
     {
-        await OrderService.CreateOrder(newOrder); // Сохранить новый заказ
+        // Связываем Order и OrderFurniture
+        newOrder.Orders = new List<OrderFurniture> { newOrderFurniture };
+        newOrderFurniture.Order = newOrder;
+
+        await OrderService.CreateOrder(newOrder, newOrderFurniture);
         await Refresh(); // Обновить таблицу
         addModal.Hide(); // Закрыть модальное окно
     }

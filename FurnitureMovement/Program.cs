@@ -1,4 +1,3 @@
-using Blazorise;
 using FurnitureMovement.Data;
 using FurnitureMovement.Services;
 using Microsoft.AspNetCore.Components;
@@ -27,9 +26,9 @@ builder.Services.AddSingleton<WeatherForecastService>();
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-var exampleContextConnectionString = builder.Configuration.GetConnectionString(nameof(OrderContext));
-builder.Services.AddDbContext<OrderContext>(options =>
-    options.UseNpgsql(exampleContextConnectionString));
+var ConnectionString = builder.Configuration.GetConnectionString(nameof(OrderContext));
+
+builder.Services.AddDbContextFactory<OrderContext>(options => options.UseNpgsql(ConnectionString));
 
 builder.Services.AddScoped<IOrderService, OrderService>(); //Строка 1
 
