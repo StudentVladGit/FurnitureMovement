@@ -11,12 +11,13 @@ using Blazorise.Icons.FontAwesome;
 var builder = WebApplication.CreateBuilder(args);
 
 //Добавили
-builder.Services
-    .AddBlazorise(options => {
-        options.Immediate = true; // Для мгновенного отклика UI
-    })
-    .AddBootstrapProviders()
-    .AddFontAwesomeIcons();
+builder.Services.AddBlazorise(options =>
+{
+    options.Immediate = true;
+})
+.AddBootstrapProviders()
+.AddFontAwesomeIcons();
+
 
 // Add services to the container.
 builder.Services.AddRazorPages();
