@@ -1,0 +1,67 @@
+﻿@using FurnitureMovement.Data
+@inject NotificationService NotificationService
+
+<div class="notification-panel @(_isOpen ? "open" : "")">
+    <div class="notification-header">
+        <h5>История изменений</h5>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="Toggle">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <div class="notification-body">
+        @if (NotificationService.GetNotifications().Any())
+        {
+            <button class="btn btn-sm btn-danger mb-2" @onclick="ClearNotifications">
+                Очистить
+            </button>
+
+            @foreach (var notification in NotificationService.GetNotifications())
+            {
+                <div class="notification-item @notification.ColorClass">
+                    <div class="notification-message">@notification.Message</div>
+                    <div class="notification-time">@notification.Timestamp.ToString("HH:mm")</div>
+                </div>
+            }
+        }
+        else
+        {
+            <p>Нет уведомлений</p>
+        }
+    </div>
+</div>
+
+@code {
+    private bool _isOpen = false;
+
+    [Parameter]
+    public EventCallback<int> OnUnreadCountChanged { get; set; }
+
+    public void Toggle()
+    {
+        _isOpen = !_isOpen;
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        NotificationService.OnChange += () =>
+        {
+            if (!_isOpen)
+            {
+                OnUnreadCountChanged.InvokeAsync(NotificationService.GetNotifications().Count);
+            }
+            StateHasChanged();
+        };
+    }
+
+    private void ClearNotifications()
+    {
+        NotificationService.ClearNotifications();
+    }
+
+    public void Dispose()
+    {
+        NotificationService.OnChange -= StateHasChanged;
+    }
+}

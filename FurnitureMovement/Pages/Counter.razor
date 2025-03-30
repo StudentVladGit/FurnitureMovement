@@ -249,36 +249,56 @@ else
     private void EditItem(Order order)
     {
         selectedOrder = new Order
-        {
-            ID = order.ID,
-            OrderNumber = order.OrderNumber,
-            OrderName = order.OrderName,
-            Orders = order.Orders?.ToList() ?? new List<OrderFurniture>()
-        };
+            {
+                ID = order.ID,
+                OrderNumber = order.OrderNumber,
+                OrderName = order.OrderName
+            };
 
-        selectedOrderFurniture = selectedOrder.Orders?.FirstOrDefault() ?? new OrderFurniture
-        {
-            OrderStatus = OrderStatus.Generated,
-            AdmissionDate = DateTime.Today,
-            OrderQuantity = 1
-        };
+        var originalFurniture = order.Orders?.FirstOrDefault();
+        selectedOrderFurniture = new OrderFurniture
+            {
+                ID = originalFurniture?.ID ?? 0,
+                OrderQuantity = originalFurniture?.OrderQuantity ?? 1,
+                OrderStatus = originalFurniture?.OrderStatus ?? OrderStatus.Generated,
+                AdmissionDate = originalFurniture?.AdmissionDate ?? DateTime.Today,
+                OrderAuthor = originalFurniture?.OrderAuthor ?? string.Empty
+                // OrderID устанавливается автоматически при сохранении
+            };
 
         editModalRef.Show();
     }
 
     private async Task UpdateOrder()
     {
-        if (selectedOrder != null)
+        if (selectedOrder != null && selectedOrderFurniture != null)
         {
-            if (selectedOrderFurniture != null)
+            try
             {
-                selectedOrder.Orders = new List<OrderFurniture> { selectedOrderFurniture };
-                selectedOrderFurniture.Order = selectedOrder;
-            }
+                // Создаем временный объект для обновления
+                var orderToUpdate = new Order
+                    {
+                        ID = selectedOrder.ID,
+                        OrderNumber = selectedOrder.OrderNumber,
+                        OrderName = selectedOrder.OrderName,
+                        Orders = new List<OrderFurniture> { selectedOrderFurniture }
+                    };
 
-            await OrderService.Update(selectedOrder);
-            await Refresh();
-            editModalRef.Hide();
+                await OrderService.Update(orderToUpdate);
+
+                // Обновляем данные и закрываем модальное окно
+                await Refresh();
+                editModalRef.Hide();
+
+                // Убедимся, что окно закрывается в любом случае
+                editModalRef.Hide();
+                await Refresh();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при обновлении: {ex.Message}");
+                editModalRef.Hide(); // Закрываем окно даже при ошибке
+            }
         }
     }
 
@@ -301,6 +321,11 @@ else
 
     private async Task Refresh()
     {
+        // Очищаем текущий список перед загрузкой новых данных
+        orders = new List<Order>();
+        StateHasChanged(); // Принудительное обновление UI
+
+        // Загружаем свежие данные из базы
         orders = await OrderService.GetAllOrders();
         StateHasChanged();
     }

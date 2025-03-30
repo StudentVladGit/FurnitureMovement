@@ -61,7 +61,7 @@ namespace FurnitureMovement.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<int?>("OrderID")
+                    b.Property<int>("OrderID")
                         .HasColumnType("integer");
 
                     b.Property<long>("OrderQuantity")
@@ -82,7 +82,9 @@ namespace FurnitureMovement.Migrations
                 {
                     b.HasOne("FurnitureMovement.Data.Order", "Order")
                         .WithMany("Orders")
-                        .HasForeignKey("OrderID");
+                        .HasForeignKey("OrderID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Order");
                 });

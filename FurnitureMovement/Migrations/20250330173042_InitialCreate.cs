@@ -36,7 +36,7 @@ namespace FurnitureMovement.Migrations
                     OrderStatus = table.Column<long>(type: "bigint", maxLength: 50, nullable: false),
                     AdmissionDate = table.Column<DateTime>(type: "date", nullable: false),
                     OrderAuthor = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    OrderID = table.Column<int>(type: "integer", nullable: true)
+                    OrderID = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -45,7 +45,8 @@ namespace FurnitureMovement.Migrations
                         name: "FK_OrderFurnitures_Orders_OrderID",
                         column: x => x.OrderID,
                         principalTable: "Orders",
-                        principalColumn: "ID");
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(

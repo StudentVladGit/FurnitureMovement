@@ -32,6 +32,7 @@ var ConnectionString = builder.Configuration.GetConnectionString(nameof(OrderCon
 builder.Services.AddDbContextFactory<OrderContext>(options => options.UseNpgsql(ConnectionString));
 
 builder.Services.AddScoped<IOrderService, OrderService>(); //Строка 1
+builder.Services.AddScoped<NotificationService>();
 
 var app = builder.Build();
 

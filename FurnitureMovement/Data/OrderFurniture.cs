@@ -24,6 +24,7 @@ namespace FurnitureMovement.Data
         [Description("Отменен")]
         Cancelled = 5
     }
+    // OrderFurniture.cs
     public class OrderFurniture
     {
         [Key]
@@ -46,6 +47,10 @@ namespace FurnitureMovement.Data
         [StringLength(50)]
         public string? OrderAuthor { get; set; }
 
+        // Внешний ключ для связи с Order
+        public int OrderID { get; set; }
+
+        // Навигационное свойство
         public Order? Order { get; set; }
     }
 }

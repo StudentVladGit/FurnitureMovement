@@ -18,10 +18,12 @@ public interface IOrderService
 public class OrderService : IOrderService
 {
     private IDbContextFactory<OrderContext> _myFactory;
+    private readonly NotificationService _notificationService;
 
-    public OrderService(IDbContextFactory<OrderContext> myFactory)
+    public OrderService(IDbContextFactory<OrderContext> myFactory, NotificationService notificationService)
     {
         _myFactory = myFactory;
+        _notificationService = notificationService;
     }
     
     //Create
@@ -78,7 +80,47 @@ public class OrderService : IOrderService
     {
         using (var context = _myFactory.CreateDbContext())
         {
-            context.Orders.Update(updatedOrder);
+            // Получаем существующий заказ с OrderFurniture
+            var existingOrder = await context.Orders
+                .Include(o => o.Orders)
+                .FirstOrDefaultAsync(o => o.ID == updatedOrder.ID);
+
+            if (existingOrder == null) return;
+
+            // Обновляем основные свойства заказа
+            existingOrder.OrderNumber = updatedOrder.OrderNumber;
+            existingOrder.OrderName = updatedOrder.OrderName;
+
+            // Получаем существующую и новую OrderFurniture
+            var existingFurniture = existingOrder.Orders?.FirstOrDefault();
+            var updatedFurniture = updatedOrder.Orders?.FirstOrDefault();
+
+            if (existingFurniture != null && updatedFurniture != null)
+            {
+                // Сохраняем старый статус для проверки изменений
+                var oldStatus = existingFurniture.OrderStatus;
+
+                // Обновляем свойства
+                existingFurniture.OrderQuantity = updatedFurniture.OrderQuantity;
+                existingFurniture.OrderStatus = updatedFurniture.OrderStatus;
+                existingFurniture.AdmissionDate = updatedFurniture.AdmissionDate;
+                existingFurniture.OrderAuthor = updatedFurniture.OrderAuthor;
+
+                // Проверяем изменение статуса
+                if (oldStatus != existingFurniture.OrderStatus)
+                {
+                    _notificationService.AddNotification(
+                        $"ORD-{updatedOrder.ID} изменил статус на {existingFurniture.OrderStatus} в {DateTime.Now:HH:mm}",
+                        existingFurniture.OrderStatus);
+                }
+            }
+            else if (updatedFurniture != null)
+            {
+                // Если не было OrderFurniture, добавляем новую
+                updatedFurniture.OrderID = existingOrder.ID;
+                context.OrderFurnitures.Add(updatedFurniture);
+            }
+
             await context.SaveChangesAsync();
         }
     }
