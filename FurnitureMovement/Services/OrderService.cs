@@ -42,10 +42,23 @@ public class OrderService : IOrderService
     {
         using (var context = _myFactory.CreateDbContext())
         {
-            var order = await context.Orders.FindAsync(id);
+            // Находим заказ вместе с связанными записями OrderFurniture
+            var order = await context.Orders
+                .Include(o => o.Orders) // Загружаем связанные OrderFurnitures
+                .FirstOrDefaultAsync(o => o.ID == id);
+
             if (order != null)
             {
+                // Удаляем все связанные OrderFurnitures
+                if (order.Orders != null && order.Orders.Any())
+                {
+                    context.OrderFurnitures.RemoveRange(order.Orders);
+                }
+
+                // Удаляем сам заказ
                 context.Orders.Remove(order);
+
+                // Сохраняем изменения
                 await context.SaveChangesAsync();
             }
         }
