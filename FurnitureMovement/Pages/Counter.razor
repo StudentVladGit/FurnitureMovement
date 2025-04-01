@@ -6,9 +6,9 @@
 @using Blazorise.Icons.FontAwesome
 @inject IOrderService OrderService
 
-<PageTitle>ТАБЛИЦА</PageTitle>
+<PageTitle>Управление</PageTitle>
 
-<h1>ТАБЛИЦА ОСНАСТКИ</h1>
+<h1>Таблица оснастки</h1>
 
 <!-- Кнопка "Добавить" -->
 <Button Color="Color.Primary" @onclick="ShowAddModal">Добавить</Button>
@@ -49,10 +49,10 @@ else
             <DataGridColumn TItem="Order" Caption="Действия" Sortable="false">
                 <DisplayTemplate Context="orderItem">
                     <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(orderItem)">
-                        <FontAwesomeIcon Icon="Edit" />
+                        ✏️
                     </Button>
                     <Button Color="Color.Danger" Size="Size.Small" class="ml-3" @onclick="() => DeleteItem(orderItem)">
-                        <FontAwesomeIcon Icon="Trash" />
+                        🗑️
                     </Button>
                 </DisplayTemplate>
             </DataGridColumn>
@@ -197,12 +197,11 @@ else
  </Modal>
 
 @code {
-    private Modal addModalRef;
-    private Modal editModalRef;
-    private Modal deleteModalRef;
+    private Modal addModalRef = new Modal();
+    private Modal editModalRef = new Modal();
+    private Modal deleteModalRef = new Modal();
     
     private List<Order> orders = new();
-    private int totalOrders;
     private Order newOrder = new();
     private OrderFurniture newOrderFurniture = new()
     {
@@ -243,7 +242,7 @@ else
 
         await OrderService.CreateOrder(newOrder, newOrderFurniture);
         await Refresh();
-        addModalRef.Hide();
+        await addModalRef.Hide();
     }
 
     private void EditItem(Order order)
@@ -286,18 +285,18 @@ else
 
                 await OrderService.Update(orderToUpdate);
 
-                // Обновляем данные и закрываем модальное окно
-                await Refresh();
-                editModalRef.Hide();
+                //// Обновляем данные и закрываем модальное окно
+                //await Refresh();
+                //await editModalRef.Hide();
 
                 // Убедимся, что окно закрывается в любом случае
-                editModalRef.Hide();
+                await editModalRef.Hide();
                 await Refresh();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка при обновлении: {ex.Message}");
-                editModalRef.Hide(); // Закрываем окно даже при ошибке
+                await editModalRef.Hide(); // Закрываем окно даже при ошибке
             }
         }
     }
@@ -315,7 +314,7 @@ else
         {
             await OrderService.Delete(selectedOrder.ID);
             await Refresh();
-            deleteModalRef.Hide();
+            await deleteModalRef.Hide();
         }
     }
 

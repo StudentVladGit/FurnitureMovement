@@ -29,7 +29,7 @@
 <NotificationPanel @ref="notificationPanel" />
 
 @code {
-    private NotificationPanel notificationPanel;
+    private NotificationPanel notificationPanel = new NotificationPanel();
     private int unreadCount = 0;
 
     private void ToggleNotificationPanel()

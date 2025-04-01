@@ -3,7 +3,9 @@
     public class NotificationService
     {
         private readonly List<Notification> _notifications = new();
+#pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Возможно, стоит объявить поле как допускающее значения NULL.
         public event Action OnChange;
+#pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Возможно, стоит объявить поле как допускающее значения NULL.
 
         public void AddNotification(string message, OrderStatus status)
         {

@@ -4,6 +4,8 @@
 @using Blazorise.Icons.FontAwesome
 @inject IJSRuntime JSRuntime
 
+<PageTitle>Отчеты</PageTitle>
+
 <h3>Тестовый DataGrid</h3>
 
 <Button Color="Color.Primary" @onclick="ShowModal">Test Blazorise Modal</Button>
@@ -24,10 +26,10 @@
         <DataGridColumn TItem="TestItem" Caption="Действия" Sortable="false">
             <DisplayTemplate>
                 <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(context)">
-                    <FontAwesomeIcon Icon="FontAwesomeIcons.PencilAlt" />
+                    ✏️
                 </Button>
                 <Button Color="Color.Danger" Size="Size.Small" @onclick="() => DeleteItem(context)" class="ml-3">
-                    <FontAwesomeIcon Icon="FontAwesomeIcons.TrashAlt" />
+                    🗑️
                 </Button>
             </DisplayTemplate>
         </DataGridColumn>
@@ -50,13 +52,13 @@
 </Modal>
 
 @code {
-    private Modal modalRef;
+    private Modal modalRef = new Modal();
     private List<TestItem> testData = new();
 
     public class TestItem
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public int Quantity { get; set; }
         public DateTime CreatedDate { get; set; }
     }
