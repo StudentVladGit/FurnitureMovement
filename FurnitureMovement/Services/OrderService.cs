@@ -110,7 +110,7 @@ public class OrderService : IOrderService
                 if (oldStatus != existingFurniture.OrderStatus)
                 {
                     _notificationService.AddNotification(
-                        $"ORD-{updatedOrder.ID} изменил статус на {existingFurniture.OrderStatus} в {DateTime.Now:HH:mm}",
+                        $"{updatedOrder.OrderNumber} изменил статус на {existingFurniture.OrderStatus} в {DateTime.Now:HH:mm}",
                         existingFurniture.OrderStatus);
                 }
             }
