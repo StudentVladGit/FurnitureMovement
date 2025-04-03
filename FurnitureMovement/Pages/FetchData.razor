@@ -1,13 +1,101 @@
 ﻿@page "/fetchdata"
-@using FurnitureMovement.Data
-@using FurnitureMovement.Services
-@inject WeatherForecastService ForecastService
-@inject IOrderService OrderService
+@using Blazorise
+@using Blazorise.DataGrid
+@using Blazorise.Icons.FontAwesome
+@inject IJSRuntime JSRuntime
 
-<PageTitle>Оснастка</PageTitle>
+<PageTitle>Отчеты</PageTitle>
 
-<h1>Заказ оснастки</h1>
+<h3>Тестовый DataGrid</h3>
+
+<Button Color="Color.Primary" @onclick="ShowModal">Test Blazorise Modal</Button>
+
+<DataGrid TItem="TestItem"
+          Data="@testData"
+          ShowPager="true"
+          PageSize="5">
+    <DataGridColumns>
+        <DataGridColumn TItem="TestItem" Field="@nameof(TestItem.Id)" Caption="ID" Sortable="true" />
+        <DataGridColumn TItem="TestItem" Field="@nameof(TestItem.Name)" Caption="Наименование" Sortable="true" />
+        <DataGridColumn TItem="TestItem" Field="@nameof(TestItem.Quantity)" Caption="Количество" Sortable="true" />
+        <DataGridColumn TItem="TestItem" Field="@nameof(TestItem.CreatedDate)" Caption="Дата создания" Sortable="true">
+            <DisplayTemplate>
+                @context.CreatedDate.ToString("dd.MM.yyyy")
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn TItem="TestItem" Caption="Действия" Sortable="false">
+            <DisplayTemplate>
+                <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(context)">
+                    ✏️
+                </Button>
+                <Button Color="Color.Danger" Size="Size.Small" @onclick="() => DeleteItem(context)" class="ml-3">
+                    🗑️
+                </Button>
+            </DisplayTemplate>
+        </DataGridColumn>
+    </DataGridColumns>
+</DataGrid>
+
+<Modal @ref="modalRef">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Test Modal</ModalTitle>
+            <CloseButton @onclick="HideModal" />
+        </ModalHeader>
+        <ModalBody>
+            <p>If you see this, Blazorise works!</p>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideModal">Close</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
 
 @code {
+    private Modal modalRef = new Modal();
+    private List<TestItem> testData = new();
 
+    public class TestItem
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public int Quantity { get; set; }
+        public DateTime CreatedDate { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        testData = Enumerable.Range(1, 20).Select(i => new TestItem
+        {
+            Id = i,
+            Name = $"Товар {i}",
+            Quantity = Random.Shared.Next(1, 100),
+            CreatedDate = DateTime.Now.AddDays(-Random.Shared.Next(1, 30))
+        }).ToList();
+    }
+
+    private void ShowModal()
+    {
+        modalRef?.Show();
+    }
+
+    private void HideModal()
+    {
+        modalRef?.Hide();
+    }
+
+    private void EditItem(TestItem item)
+    {
+        Console.WriteLine($"Редактируем элемент с ID: {item.Id}");
+    }
+
+    private async Task DeleteItem(TestItem item)
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Вы уверены, что хотите удалить {item.Name}?");
+        if (confirm)
+        {
+            testData.Remove(item);
+            StateHasChanged();
+        }
+    }
 }

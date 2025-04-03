@@ -7,29 +7,34 @@ using System.Runtime.InteropServices;
 
 namespace FurnitureMovement.Services;
 
+public interface IOrderService
+{
+    Task CreateOrder(Order newOrder, OrderFurniture newOrderFurniture);
+    Task<List<Order>> GetAllOrders();
+    Task Update(Order updatedOrder);
+    Task Delete(int id);
+}
+
 public class OrderService : IOrderService
 {
-    private readonly DbContextOptions<OrderContext> _myFactory;
+    private IDbContextFactory<OrderContext> _myFactory;
+    private readonly NotificationService _notificationService;
 
-    public OrderService(DbContextOptions<OrderContext> myFactory)
+    public OrderService(IDbContextFactory<OrderContext> myFactory, NotificationService notificationService)
     {
         _myFactory = myFactory;
+        _notificationService = notificationService;
     }
-    private OrderContext CreateDbContext()
-    {
-        return new OrderContext(_myFactory);
-    }
-
+    
     //Create
-    public async Task CreateOrder(Order newOrder)
+    public async Task CreateOrder(Order newOrder, OrderFurniture newOrderFurniture)
     {
-        //using var context = _myFactory.CreateDbContext();
-        //await context.Orders.AddAsync(newOrder);
-        //await context.SaveChangesAsync();
-
-        using (var context = CreateDbContext())
+        using (var context = _myFactory.CreateDbContext())
         {
-            context.Orders.Add(newOrder);
+            newOrder.Orders = new List<OrderFurniture> { newOrderFurniture };
+            newOrderFurniture.Order = newOrder;
+
+            await context.Orders.AddAsync(newOrder);
             await context.SaveChangesAsync();
         }
     }
@@ -37,12 +42,25 @@ public class OrderService : IOrderService
     // Delete
     public async Task Delete(int id)
     {
-        using (var context = CreateDbContext())
+        using (var context = _myFactory.CreateDbContext())
         {
-            var order = await context.Orders.FindAsync(id);
+            // Находим заказ вместе с связанными записями OrderFurniture
+            var order = await context.Orders
+                .Include(o => o.Orders) // Загружаем связанные OrderFurnitures
+                .FirstOrDefaultAsync(o => o.ID == id);
+
             if (order != null)
             {
+                // Удаляем все связанные OrderFurnitures
+                if (order.Orders != null && order.Orders.Any())
+                {
+                    context.OrderFurnitures.RemoveRange(order.Orders);
+                }
+
+                // Удаляем сам заказ
                 context.Orders.Remove(order);
+
+                // Сохраняем изменения
                 await context.SaveChangesAsync();
             }
         }
@@ -51,37 +69,59 @@ public class OrderService : IOrderService
     //Read
     public async Task<List<Order>> GetAllOrders()
     {
-        using (var context = CreateDbContext())
+        using (var context = _myFactory.CreateDbContext())
         {
-            return await context.Orders.ToListAsync();
+            return await context.Orders.Include(o => o.Orders).ToListAsync();
         }
     }
-
-    //public async Task<Order> GetOrderById(int id)
-    //{
-    //    using var context = _myFactory.CreateDbContext();
-    //    return await context.Orders.FindAsync(id);
-    //}
 
     // Update
     public async Task Update(Order updatedOrder)
     {
-        using (var context = CreateDbContext())
+        using (var context = _myFactory.CreateDbContext())
         {
-            context.Orders.Update(updatedOrder);
+            // Получаем существующий заказ с OrderFurniture
+            var existingOrder = await context.Orders
+                .Include(o => o.Orders)
+                .FirstOrDefaultAsync(o => o.ID == updatedOrder.ID);
+
+            if (existingOrder == null) return;
+
+            // Обновляем основные свойства заказа
+            existingOrder.OrderNumber = updatedOrder.OrderNumber;
+            existingOrder.OrderName = updatedOrder.OrderName;
+
+            // Получаем существующую и новую OrderFurniture
+            var existingFurniture = existingOrder.Orders?.FirstOrDefault();
+            var updatedFurniture = updatedOrder.Orders?.FirstOrDefault();
+
+            if (existingFurniture != null && updatedFurniture != null)
+            {
+                // Сохраняем старый статус для проверки изменений
+                var oldStatus = existingFurniture.OrderStatus;
+
+                // Обновляем свойства
+                existingFurniture.OrderQuantity = updatedFurniture.OrderQuantity;
+                existingFurniture.OrderStatus = updatedFurniture.OrderStatus;
+                existingFurniture.AdmissionDate = updatedFurniture.AdmissionDate;
+                existingFurniture.OrderAuthor = updatedFurniture.OrderAuthor;
+
+                // Проверяем изменение статуса
+                if (oldStatus != existingFurniture.OrderStatus)
+                {
+                    _notificationService.AddNotification(
+                        $"{updatedOrder.OrderNumber} изменил статус на {existingFurniture.OrderStatus} в {DateTime.Now:HH:mm}",
+                        existingFurniture.OrderStatus);
+                }
+            }
+            else if (updatedFurniture != null)
+            {
+                // Если не было OrderFurniture, добавляем новую
+                updatedFurniture.OrderID = existingOrder.ID;
+                context.OrderFurnitures.Add(updatedFurniture);
+            }
+
             await context.SaveChangesAsync();
         }
     }
-
-
-}
-
-
-public interface IOrderService
-{
-    Task CreateOrder(Order newOrder);
-    Task<List<Order>> GetAllOrders();
-    //Task<Order> GetOrderById(int id);
-    Task Update(Order updatedOrder);
-    Task Delete(int id);
 }

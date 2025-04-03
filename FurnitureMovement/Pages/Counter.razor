@@ -3,15 +3,15 @@
 @using FurnitureMovement.Services
 @using Blazorise
 @using Blazorise.DataGrid
+@using Blazorise.Icons.FontAwesome
 @inject IOrderService OrderService
 
-<PageTitle>ТАБЛИЦА</PageTitle>
+<PageTitle>Управление</PageTitle>
 
-<h1>ТАБЛИЦА ОСНАСТКИ</h1>
+<h1>Таблица оснастки</h1>
 
-<Button Color="Color.Primary" Clicked="@(() => showAddModal = true)" Class="mb-3">
-    Добавить заказ
-</Button>
+<!-- Кнопка "Добавить" -->
+<Button Color="Color.Primary" @onclick="ShowAddModal">Добавить</Button>
 
 @if (orders == null)
 {
@@ -26,69 +26,306 @@ else
             <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
             <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер" />
             <DataGridColumn TItem="Order" Field="@nameof(Order.OrderName)" Caption="Наименование" />
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderQuantity)" Caption="Количество" />
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderStatus)" Caption="Статус">
+            <DataGridColumn TItem="Order" Caption="Количество">
                 <DisplayTemplate Context="order">
-                    @Enum.GetName(typeof(OrderStatus), order.OrderStatus)
+                    @(order.Orders?.FirstOrDefault()?.OrderQuantity.ToString() ?? "0")
                 </DisplayTemplate>
             </DataGridColumn>
-            <DataGridColumn TItem="Order" Field="@nameof(Order.AdmissionDate)" Caption="Дата">
+            <DataGridColumn TItem="Order" Caption="Статус">
                 <DisplayTemplate Context="order">
-                    @order.AdmissionDate.ToString("dd/MM/yyyy")
+                    @(order.Orders?.FirstOrDefault()?.OrderStatus.ToString() ?? "0")
                 </DisplayTemplate>
             </DataGridColumn>
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderAuthor)" Caption="Автор">
+            <DataGridColumn TItem="Order" Caption="Дата">
                 <DisplayTemplate Context="order">
-                    @Enum.GetName(typeof(OrderAuthor), order.OrderAuthor)
+                    @(order.Orders?.FirstOrDefault()?.AdmissionDate.ToString("dd/MM/yyyy") ?? "")
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Автор">
+                <DisplayTemplate Context="order">
+                    @(order.Orders?.FirstOrDefault()?.OrderAuthor ?? "")
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Действия" Sortable="false">
+                <DisplayTemplate Context="orderItem">
+                    <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(orderItem)">
+                        ✏️
+                    </Button>
+                    <Button Color="Color.Danger" Size="Size.Small" class="ml-3" @onclick="() => DeleteItem(orderItem)">
+                        🗑️
+                    </Button>
                 </DisplayTemplate>
             </DataGridColumn>
         </DataGridColumns>
     </DataGrid>
 }
 
-<!-- Модальное окно для добавления заказа -->
-<Modal @ref="addModal" Visible="@showAddModal" VisibleChanged="@((v) => showAddModal = v)">
+<Modal @ref="addModalRef">
     <ModalContent>
         <ModalHeader>
             <ModalTitle>Добавить новый заказ</ModalTitle>
-            <CloseButton Clicked="@(() => showAddModal = false)" />
+            <CloseButton @onclick="HideAddModal" />
         </ModalHeader>
         <ModalBody>
-            <!-- Здесь будет форма для добавления заказа -->
-            <p>Форма будет добавлена позже</p>
+            <!-- Поля для ввода данных -->
+            <Field>
+                <FieldLabel>Номер заказа</FieldLabel>
+                <TextEdit @bind-Text="newOrder.OrderNumber" />
+            </Field>
+            <Field>
+                <FieldLabel>Наименование</FieldLabel>
+                <TextEdit @bind-Text="newOrder.OrderName" />
+            </Field>
+            <Field>
+                <FieldLabel>Количество</FieldLabel>
+                <NumericEdit TValue="long" @bind-Value="newOrderFurniture.OrderQuantity" />
+            </Field>
+            <Field>
+                <FieldLabel>Статус</FieldLabel>
+                <Select TValue="OrderStatus" @bind-SelectedValue="newOrderFurniture.OrderStatus">
+                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                    {
+                        <SelectItem TValue="OrderStatus" Value="@status">@status.ToString()</SelectItem>
+                    }
+                </Select>
+            </Field>
+            <Field>
+                <FieldLabel>Дата</FieldLabel>
+                <DateEdit @bind-Date="newOrderFurniture.AdmissionDate" />
+            </Field>
+            <Field>
+                <FieldLabel>Автор</FieldLabel>
+                <TextEdit @bind-Text="newOrderFurniture.OrderAuthor" />
+            </Field>
         </ModalBody>
         <ModalFooter>
-            <Button Color="Color.Secondary" Clicked="@(() => showAddModal = false)">
-                Отмена
-            </Button>
-            <Button Color="Color.Primary" Clicked="@SaveOrder">
-                Сохранить
-            </Button>
+            <Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
+            <Button Color="Color.Primary" @onclick="SaveOrder">Сохранить</Button>
         </ModalFooter>
     </ModalContent>
 </Modal>
 
-@code {
-    private List<Order> orders;
-    private bool showAddModal = false;
-    private Modal addModal;
+<Modal @ref="editModalRef">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Редактировать заказ</ModalTitle>
+            <CloseButton @onclick="() => editModalRef.Hide()" />
+        </ModalHeader>
+        <ModalBody>
+            <Field>
+                <FieldLabel>Номер заказа</FieldLabel>
+                <TextEdit @bind-Text="selectedOrder.OrderNumber" />
+            </Field>
+            <Field>
+                <FieldLabel>Наименование</FieldLabel>
+                <TextEdit @bind-Text="selectedOrder.OrderName" />
+            </Field>
+            <Field>
+                <FieldLabel>Количество</FieldLabel>
+                <NumericEdit TValue="long" @bind-Value="selectedOrderFurniture.OrderQuantity" />
+            </Field>
+            <Field>
+                <FieldLabel>Статус</FieldLabel>
+                <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrderFurniture.OrderStatus">
+                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                    {
+                        <SelectItem TValue="OrderStatus" Value="@status">@status.ToString()</SelectItem>
+                    }
+                </Select>
+            </Field>
+            <Field>
+                <FieldLabel>Дата</FieldLabel>
+                <DateEdit @bind-Date="selectedOrderFurniture.AdmissionDate" />
+            </Field>
+            <Field>
+                <FieldLabel>Автор</FieldLabel>
+                <TextEdit @bind-Text="selectedOrderFurniture.OrderAuthor" />
+            </Field>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="() => editModalRef.Hide()">Отмена</Button>
+            <Button Color="Color.Primary" @onclick="UpdateOrder">Сохранить</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
 
-    private Order newOrder = new Order(); // Для хранения данных нового заказа
+<!-- Модальное окно удаления -->
+<Modal @ref="deleteModalRef">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Удаление заказа</ModalTitle>
+            <CloseButton @onclick="() => deleteModalRef.Hide()" />
+        </ModalHeader>
+        <ModalBody>
+            <p>Вы уверены, что хотите удалить этот заказ?</p>
+
+            <Field>
+                <FieldLabel>Номер заказа</FieldLabel>
+                <TextEdit @bind-Text="selectedOrder.OrderNumber" ReadOnly />
+             </Field>
+             <Field>
+                 <FieldLabel>Наименование</FieldLabel>
+                 <TextEdit @bind-Text="selectedOrder.OrderName" ReadOnly />
+             </Field>
+             <Field>
+                 <FieldLabel>Количество</FieldLabel>
+                 <NumericEdit TValue="long" @bind-Value="selectedOrderFurniture.OrderQuantity" ReadOnly />
+             </Field>
+             <Field>
+                 <FieldLabel>Статус</FieldLabel>
+                 <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrderFurniture.OrderStatus" Disabled>
+                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                    {
+                        <SelectItem TValue="OrderStatus" Value="@status">@status.ToString()</SelectItem>
+                    }
+                </Select>
+            </Field>
+            <Field>
+                <FieldLabel>Дата</FieldLabel>
+                <DateEdit @bind-Date="selectedOrderFurniture.AdmissionDate" ReadOnly />
+             </Field>
+             <Field>
+                 <FieldLabel>Автор</FieldLabel>
+                 <TextEdit @bind-Text="selectedOrderFurniture.OrderAuthor" ReadOnly />
+             </Field>
+         </ModalBody>
+         <ModalFooter>
+             <Button Color="Color.Secondary" @onclick="() => deleteModalRef.Hide()">Отмена</Button>
+             <Button Color="Color.Danger" @onclick="ConfirmDelete">Удалить</Button>
+         </ModalFooter>
+     </ModalContent>
+ </Modal>
+
+@code {
+    private Modal addModalRef = new Modal();
+    private Modal editModalRef = new Modal();
+    private Modal deleteModalRef = new Modal();
+    
+    private List<Order> orders = new();
+    private Order newOrder = new();
+    private OrderFurniture newOrderFurniture = new()
+    {
+        OrderStatus = OrderStatus.Generated,
+        AdmissionDate = DateTime.Today,
+        OrderQuantity = 1
+    };
+
+    private Order selectedOrder = new();
+    private OrderFurniture selectedOrderFurniture = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadOrders();
+        await Refresh();
     }
 
-    private async Task LoadOrders()
+    private void ShowAddModal()
     {
-        orders = await OrderService.GetAllOrders();
+        newOrder = new Order();
+        newOrderFurniture = new OrderFurniture
+        {
+            OrderStatus = OrderStatus.Generated,
+            AdmissionDate = DateTime.Today,
+            OrderQuantity = 1
+        };
+        addModalRef.Show();
+    }
+
+    private void HideAddModal()
+    {
+        addModalRef.Hide();
     }
 
     private async Task SaveOrder()
     {
-        // Логика сохранения заказа
-        showAddModal = false;
-        await LoadOrders(); // Перезагружаем данные после сохранения
+        newOrder.Orders = new List<OrderFurniture> { newOrderFurniture };
+        newOrderFurniture.Order = newOrder;
+
+        await OrderService.CreateOrder(newOrder, newOrderFurniture);
+        await Refresh();
+        await addModalRef.Hide();
+    }
+
+    private void EditItem(Order order)
+    {
+        selectedOrder = new Order
+            {
+                ID = order.ID,
+                OrderNumber = order.OrderNumber,
+                OrderName = order.OrderName
+            };
+
+        var originalFurniture = order.Orders?.FirstOrDefault();
+        selectedOrderFurniture = new OrderFurniture
+            {
+                ID = originalFurniture?.ID ?? 0,
+                OrderQuantity = originalFurniture?.OrderQuantity ?? 1,
+                OrderStatus = originalFurniture?.OrderStatus ?? OrderStatus.Generated,
+                AdmissionDate = originalFurniture?.AdmissionDate ?? DateTime.Today,
+                OrderAuthor = originalFurniture?.OrderAuthor ?? string.Empty
+                // OrderID устанавливается автоматически при сохранении
+            };
+
+        editModalRef.Show();
+    }
+
+    private async Task UpdateOrder()
+    {
+        if (selectedOrder != null && selectedOrderFurniture != null)
+        {
+            try
+            {
+                // Создаем временный объект для обновления
+                var orderToUpdate = new Order
+                    {
+                        ID = selectedOrder.ID,
+                        OrderNumber = selectedOrder.OrderNumber,
+                        OrderName = selectedOrder.OrderName,
+                        Orders = new List<OrderFurniture> { selectedOrderFurniture }
+                    };
+
+                await OrderService.Update(orderToUpdate);
+
+                //// Обновляем данные и закрываем модальное окно
+                //await Refresh();
+                //await editModalRef.Hide();
+
+                // Убедимся, что окно закрывается в любом случае
+                await editModalRef.Hide();
+                await Refresh();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при обновлении: {ex.Message}");
+                await editModalRef.Hide(); // Закрываем окно даже при ошибке
+            }
+        }
+    }
+
+    private void DeleteItem(Order order)
+    {
+        selectedOrder = order;
+        selectedOrderFurniture = order.Orders?.FirstOrDefault() ?? new OrderFurniture();
+        deleteModalRef.Show();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (selectedOrder != null)
+        {
+            await OrderService.Delete(selectedOrder.ID);
+            await Refresh();
+            await deleteModalRef.Hide();
+        }
+    }
+
+    private async Task Refresh()
+    {
+        // Очищаем текущий список перед загрузкой новых данных
+        orders = new List<Order>();
+        StateHasChanged(); // Принудительное обновление UI
+
+        // Загружаем свежие данные из базы
+        orders = await OrderService.GetAllOrders();
+        StateHasChanged();
     }
 }

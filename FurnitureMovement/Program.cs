@@ -1,37 +1,38 @@
-using Blazorise;
 using FurnitureMovement.Data;
 using FurnitureMovement.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 
-using Blazorise;//Добавили
-using Blazorise.Bootstrap5;//Добавили
-using Blazorise.Icons.FontAwesome;//Добавили
+using Blazorise;
+using Blazorise.Bootstrap;
+using Blazorise.Icons.FontAwesome;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //Добавили
-builder.Services
-    .AddBlazorise(options =>
-    {
-        options.Immediate = true;
-    })
-    .AddBootstrap5Providers()
-    .AddFontAwesomeIcons();
+builder.Services.AddBlazorise(options =>
+{
+    options.Immediate = true;
+})
+.AddBootstrapProviders()
+.AddFontAwesomeIcons();
+
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+
 builder.Services.AddSingleton<WeatherForecastService>();
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-var exampleContextConnectionString = builder.Configuration.GetConnectionString(nameof(OrderContext));
-builder.Services.AddDbContext<OrderContext>(options =>
-    options.UseNpgsql(exampleContextConnectionString));
+var ConnectionString = builder.Configuration.GetConnectionString(nameof(OrderContext));
+
+builder.Services.AddDbContextFactory<OrderContext>(options => options.UseNpgsql(ConnectionString));
 
 builder.Services.AddScoped<IOrderService, OrderService>(); //Строка 1
+builder.Services.AddScoped<NotificationService>();
 
 var app = builder.Build();
 

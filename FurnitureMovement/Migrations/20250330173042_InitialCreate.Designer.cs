@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20250325144036_AddNewColumn")]
-    partial class AddNewColumn
+    [Migration("20250330173042_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,13 +33,6 @@ namespace FurnitureMovement.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
 
-                    b.Property<DateTime>("AdmissionDate")
-                        .HasColumnType("date");
-
-                    b.Property<int>("OrderAuthor")
-                        .HasMaxLength(50)
-                        .HasColumnType("integer");
-
                     b.Property<string>("OrderName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -50,16 +43,58 @@ namespace FurnitureMovement.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<long>("OrderQuantity")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("OrderStatus")
-                        .HasMaxLength(50)
-                        .HasColumnType("integer");
-
                     b.HasKey("ID");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("FurnitureMovement.Data.OrderFurniture", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
+
+                    b.Property<DateTime>("AdmissionDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("OrderAuthor")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("OrderID")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("OrderQuantity")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("OrderStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("bigint");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("OrderID");
+
+                    b.ToTable("OrderFurnitures");
+                });
+
+            modelBuilder.Entity("FurnitureMovement.Data.OrderFurniture", b =>
+                {
+                    b.HasOne("FurnitureMovement.Data.Order", "Order")
+                        .WithMany("Orders")
+                        .HasForeignKey("OrderID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("FurnitureMovement.Data.Order", b =>
+                {
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }
