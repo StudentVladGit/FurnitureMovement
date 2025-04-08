@@ -1,8 +1,11 @@
 ﻿@page "/fetchdata"
+@using FurnitureMovement.Data
+@using FurnitureMovement.Services
 @using Blazorise
 @using Blazorise.DataGrid
 @using Blazorise.Icons.FontAwesome
 @inject IJSRuntime JSRuntime
+@inject IOrderService OrderService
 
 <PageTitle>Отчеты</PageTitle>
 
@@ -10,30 +13,44 @@
 
 <Button Color="Color.Primary" @onclick="ShowModal">Test Blazorise Modal</Button>
 
-<DataGrid TItem="TestItem"
-          Data="@testData"
-          ShowPager="true"
-          PageSize="5">
-    <DataGridColumns>
-        <DataGridColumn TItem="TestItem" Field="@nameof(TestItem.Id)" Caption="ID" Sortable="true" />
-        <DataGridColumn TItem="TestItem" Field="@nameof(TestItem.Name)" Caption="Наименование" Sortable="true" />
-        <DataGridColumn TItem="TestItem" Field="@nameof(TestItem.Quantity)" Caption="Количество" Sortable="true" />
-        <DataGridColumn TItem="TestItem" Field="@nameof(TestItem.CreatedDate)" Caption="Дата создания" Sortable="true">
-            <DisplayTemplate>
-                @context.CreatedDate.ToString("dd.MM.yyyy")
-            </DisplayTemplate>
-        </DataGridColumn>
-        <DataGridColumn TItem="TestItem" Caption="Действия" Sortable="false">
-            <DisplayTemplate>
-                <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(context)">
-                    ✏️
-                </Button>
-                <Button Color="Color.Danger" Size="Size.Small" @onclick="() => DeleteItem(context)" class="ml-3">
-                    🗑️
-                </Button>
-            </DisplayTemplate>
-        </DataGridColumn>
-    </DataGridColumns>
+<DataGrid TItem="Order"
+              Data="@orders"
+              ShowPager="true">
+        <DataGridColumns>
+            <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер" />
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderName)" Caption="Наименование" />
+            <DataGridColumn TItem="Order" Caption="Количество">
+                <DisplayTemplate Context="order">
+                    @(order.Orders?.FirstOrDefault()?.OrderQuantity.ToString() ?? "0")
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Статус">
+                <DisplayTemplate Context="order">
+                    @(order.Orders?.FirstOrDefault()?.OrderStatus.ToString() ?? "0")
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Дата">
+                <DisplayTemplate Context="order">
+                    @(order.Orders?.FirstOrDefault()?.AdmissionDate.ToString("dd/MM/yyyy") ?? "")
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Автор">
+                <DisplayTemplate Context="order">
+                    @(order.Orders?.FirstOrDefault()?.OrderAuthor ?? "")
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Действия" Sortable="false">
+                <DisplayTemplate Context="orderItem">
+                    <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(orderItem)">
+                        ✏️
+                    </Button>
+                    <Button Color="Color.Danger" Size="Size.Small" class="ml-3" @onclick="() => DeleteItem(orderItem)">
+                        🗑️
+                    </Button>
+                </DisplayTemplate>
+            </DataGridColumn>
+        </DataGridColumns>
 </DataGrid>
 
 <Modal @ref="modalRef">
@@ -52,8 +69,8 @@
 </Modal>
 
 @code {
-    private Modal modalRef = new Modal();
-    private List<TestItem> testData = new();
+    private Modal modalRef = new Modal();   
+    private List<Order> orders = new();
 
     public class TestItem
     {
@@ -65,13 +82,13 @@
 
     protected override void OnInitialized()
     {
-        testData = Enumerable.Range(1, 20).Select(i => new TestItem
-        {
-            Id = i,
-            Name = $"Товар {i}",
-            Quantity = Random.Shared.Next(1, 100),
-            CreatedDate = DateTime.Now.AddDays(-Random.Shared.Next(1, 30))
-        }).ToList();
+        // testData = Enumerable.Range(1, 20).Select(i => new TestItem
+        // {
+        //     Id = i,
+        //     Name = $"Товар {i}",
+        //     Quantity = Random.Shared.Next(1, 100),
+        //     CreatedDate = DateTime.Now.AddDays(-Random.Shared.Next(1, 30))
+        // }).ToList();
     }
 
     private void ShowModal()
@@ -84,18 +101,18 @@
         modalRef?.Hide();
     }
 
-    private void EditItem(TestItem item)
+    private void EditItem(Order item)
     {
-        Console.WriteLine($"Редактируем элемент с ID: {item.Id}");
+        // Console.WriteLine($"Редактируем элемент с ID: {item.Id}");
     }
 
-    private async Task DeleteItem(TestItem item)
+    private async Task DeleteItem(Order item)
     {
-        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Вы уверены, что хотите удалить {item.Name}?");
-        if (confirm)
-        {
-            testData.Remove(item);
-            StateHasChanged();
-        }
+        // var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Вы уверены, что хотите удалить {item.Name}?");
+        // if (confirm)
+        // {
+        //     testData.Remove(item);
+        //     StateHasChanged();
+        // }
     }
 }

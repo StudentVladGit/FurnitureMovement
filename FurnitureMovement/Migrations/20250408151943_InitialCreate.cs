@@ -13,17 +13,36 @@ namespace FurnitureMovement.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "OrderNames",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderNames", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Orders",
                 columns: table => new
                 {
                     ID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     OrderNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    OrderName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                    OrderNameID = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Orders", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_Orders_OrderNames_OrderNameID",
+                        column: x => x.OrderNameID,
+                        principalTable: "OrderNames",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -53,6 +72,11 @@ namespace FurnitureMovement.Migrations
                 name: "IX_OrderFurnitures_OrderID",
                 table: "OrderFurnitures",
                 column: "OrderID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_OrderNameID",
+                table: "Orders",
+                column: "OrderNameID");
         }
 
         /// <inheritdoc />
@@ -63,6 +87,9 @@ namespace FurnitureMovement.Migrations
 
             migrationBuilder.DropTable(
                 name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "OrderNames");
         }
     }
 }
