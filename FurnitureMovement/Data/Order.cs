@@ -17,9 +17,13 @@ namespace FurnitureMovement.Data
         [StringLength(50)]
         public string? OrderNumber { get; set; }
 
+        // Внешний ключ для связи с OrderName
         [Required]
-        [StringLength(50)]
-        public string? OrderName { get; set; }
+        public int OrderNameID { get; set; } = 0;
+
+        // Навигационное свойство
+        [ForeignKey("OrderNameID")]
+        public OrderName? OrderName { get; set; }
 
         public List<OrderFurniture>? Orders { get; set; }
     }

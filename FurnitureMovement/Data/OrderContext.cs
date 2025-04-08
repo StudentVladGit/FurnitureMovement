@@ -10,7 +10,8 @@ public class OrderContext : DbContext
     }
 
     public DbSet<Order> Orders { get; set; }
-    public DbSet<OrderFurniture> OrderFurnitures { get; set; }  
+    public DbSet<OrderFurniture> OrderFurnitures { get; set; }
+    public DbSet<OrderName> OrderNames { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

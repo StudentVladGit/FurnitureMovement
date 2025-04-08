@@ -7,16 +7,15 @@ using Microsoft.EntityFrameworkCore;
 using Blazorise;
 using Blazorise.Bootstrap;
 using Blazorise.Icons.FontAwesome;
+using Blazorise.Bootstrap5;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //Добавили
-builder.Services.AddBlazorise(options =>
-{
-    options.Immediate = true;
-})
-.AddBootstrapProviders()
-.AddFontAwesomeIcons();
+builder.Services
+    .AddBlazorise(options => options.Immediate = true)
+    .AddBootstrap5Providers() 
+    .AddFontAwesomeIcons();
 
 
 // Add services to the container.

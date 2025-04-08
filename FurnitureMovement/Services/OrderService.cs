@@ -11,6 +11,7 @@ public interface IOrderService
 {
     Task CreateOrder(Order newOrder, OrderFurniture newOrderFurniture);
     Task<List<Order>> GetAllOrders();
+    Task<List<OrderName>> GetAllOrderNames();
     Task Update(Order updatedOrder);
     Task Delete(int id);
 }
@@ -31,6 +32,12 @@ public class OrderService : IOrderService
     {
         using (var context = _myFactory.CreateDbContext())
         {
+            var orderNameExists = await context.OrderNames.AnyAsync(x => x.ID == newOrder.OrderNameID);
+            if (!orderNameExists)
+            {
+                throw new ArgumentException("Указанное наименование не существует");
+            }
+
             newOrder.Orders = new List<OrderFurniture> { newOrderFurniture };
             newOrderFurniture.Order = newOrder;
 
@@ -75,6 +82,12 @@ public class OrderService : IOrderService
         }
     }
 
+    public async Task<List<OrderName>> GetAllOrderNames()
+    {
+        var context = _myFactory.CreateDbContext();
+        return await context.OrderNames.ToListAsync();
+    }
+
     // Update
     public async Task Update(Order updatedOrder)
     {
@@ -89,7 +102,7 @@ public class OrderService : IOrderService
 
             // Обновляем основные свойства заказа
             existingOrder.OrderNumber = updatedOrder.OrderNumber;
-            existingOrder.OrderName = updatedOrder.OrderName;
+            existingOrder.OrderNameID = updatedOrder.OrderNameID;
 
             // Получаем существующую и новую OrderFurniture
             var existingFurniture = existingOrder.Orders?.FirstOrDefault();

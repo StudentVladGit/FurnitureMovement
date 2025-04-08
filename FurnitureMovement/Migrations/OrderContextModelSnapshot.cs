@@ -30,10 +30,8 @@ namespace FurnitureMovement.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
 
-                    b.Property<string>("OrderName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<int>("OrderNameID")
+                        .HasColumnType("integer");
 
                     b.Property<string>("OrderNumber")
                         .IsRequired()
@@ -41,6 +39,8 @@ namespace FurnitureMovement.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("OrderNameID");
 
                     b.ToTable("Orders");
                 });
@@ -76,6 +76,35 @@ namespace FurnitureMovement.Migrations
                     b.HasIndex("OrderID");
 
                     b.ToTable("OrderFurnitures");
+                });
+
+            modelBuilder.Entity("FurnitureMovement.Data.OrderName", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("OrderNames");
+                });
+
+            modelBuilder.Entity("FurnitureMovement.Data.Order", b =>
+                {
+                    b.HasOne("FurnitureMovement.Data.OrderName", "OrderName")
+                        .WithMany()
+                        .HasForeignKey("OrderNameID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OrderName");
                 });
 
             modelBuilder.Entity("FurnitureMovement.Data.OrderFurniture", b =>

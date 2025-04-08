@@ -5,6 +5,7 @@
 @using Blazorise.DataGrid
 @using Blazorise.Icons.FontAwesome
 @inject IOrderService OrderService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Управление</PageTitle>
 
@@ -25,7 +26,11 @@ else
         <DataGridColumns>
             <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
             <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер" />
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderName)" Caption="Наименование" />
+            <DataGridColumn TItem="Order" Caption="Наименование">
+                <DisplayTemplate Context="order">
+                    @GetOrderName(order.OrderNameID)
+                </DisplayTemplate>
+            </DataGridColumn>
             <DataGridColumn TItem="Order" Caption="Количество">
                 <DisplayTemplate Context="order">
                     @(order.Orders?.FirstOrDefault()?.OrderQuantity.ToString() ?? "0")
@@ -72,9 +77,32 @@ else
                 <FieldLabel>Номер заказа</FieldLabel>
                 <TextEdit @bind-Text="newOrder.OrderNumber" />
             </Field>
-            <Field>
+            @* <Field>
                 <FieldLabel>Наименование</FieldLabel>
-                <TextEdit @bind-Text="newOrder.OrderName" />
+                <Select TValue="int" @bind-SelectedValue="selectedOrder.OrderNameID">
+                    <SelectItem TValue="int" Value="0" Disabled Hidden>Выберите наименование</SelectItem>
+                    @foreach (var name in orderNames)
+                    {
+                        <SelectItem TValue="int" Value="@name.ID">@name.Name</SelectItem>
+                    }
+                </Select>
+            </Field> *@
+            <Field>
+            <FieldLabel>Наименование</FieldLabel>
+            <Select TValue="int" @bind-SelectedValue="newOrder.OrderNameID">
+                <SelectItem TValue="int" Value="0" Disabled Hidden>Выберите наименование</SelectItem>
+                    @if (orderNames != null)
+                    {
+                        @foreach (var name in orderNames)
+                        {
+                            <SelectItem TValue="int" Value="@name.ID">@name.Name</SelectItem>
+                        }
+                    }
+                </Select>
+                @if (newOrder.OrderNameID <= 0)
+                {
+                    <FieldHelp Style="color: red;">Необходимо выбрать наименование</FieldHelp>
+                }
             </Field>
             <Field>
                 <FieldLabel>Количество</FieldLabel>
@@ -118,7 +146,12 @@ else
             </Field>
             <Field>
                 <FieldLabel>Наименование</FieldLabel>
-                <TextEdit @bind-Text="selectedOrder.OrderName" />
+                <Select TValue="int" @bind-SelectedValue="selectedOrder.OrderNameID">
+                    @foreach (var name in orderNames)
+                    {
+                        <SelectItem TValue="int" Value="@name.ID">@name.Name</SelectItem>
+                    }
+                </Select>
             </Field>
             <Field>
                 <FieldLabel>Количество</FieldLabel>
@@ -165,7 +198,7 @@ else
              </Field>
              <Field>
                  <FieldLabel>Наименование</FieldLabel>
-                 <TextEdit @bind-Text="selectedOrder.OrderName" ReadOnly />
+                 <TextEdit ReadOnly Value="@GetOrderName(selectedOrder.OrderNameID)" />
              </Field>
              <Field>
                  <FieldLabel>Количество</FieldLabel>
@@ -202,6 +235,7 @@ else
     private Modal deleteModalRef = new Modal();
     
     private List<Order> orders = new();
+    private List<OrderName> orderNames = new();
     private Order newOrder = new();
     private OrderFurniture newOrderFurniture = new()
     {
@@ -216,17 +250,23 @@ else
     protected override async Task OnInitializedAsync()
     {
         await Refresh();
+        orderNames = await OrderService.GetAllOrderNames();
     }
 
     private void ShowAddModal()
     {
-        newOrder = new Order();
+        newOrder = new Order
+            {
+                OrderNameID = 0 // Сбрасываем выбор при открытии
+            };
+
         newOrderFurniture = new OrderFurniture
-        {
-            OrderStatus = OrderStatus.Generated,
-            AdmissionDate = DateTime.Today,
-            OrderQuantity = 1
-        };
+            {
+                OrderStatus = OrderStatus.Generated,
+                AdmissionDate = DateTime.Today,
+                OrderQuantity = 1
+            };
+
         addModalRef.Show();
     }
 
@@ -237,12 +277,26 @@ else
 
     private async Task SaveOrder()
     {
-        newOrder.Orders = new List<OrderFurniture> { newOrderFurniture };
-        newOrderFurniture.Order = newOrder;
+        if (newOrder.OrderNameID <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите наименование!");
+            return;
+        }
 
-        await OrderService.CreateOrder(newOrder, newOrderFurniture);
-        await Refresh();
-        await addModalRef.Hide();
+        try
+        {
+            newOrder.Orders = new List<OrderFurniture> { newOrderFurniture };
+            newOrderFurniture.Order = newOrder;
+
+            await OrderService.CreateOrder(newOrder, newOrderFurniture);
+            await Refresh();
+            await addModalRef.Hide();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при сохранении: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", "Ошибка при сохранении!");
+        }
     }
 
     private void EditItem(Order order)
@@ -251,6 +305,7 @@ else
             {
                 ID = order.ID,
                 OrderNumber = order.OrderNumber,
+                OrderNameID = order.OrderNameID,
                 OrderName = order.OrderName
             };
 
@@ -279,7 +334,7 @@ else
                     {
                         ID = selectedOrder.ID,
                         OrderNumber = selectedOrder.OrderNumber,
-                        OrderName = selectedOrder.OrderName,
+                        OrderNameID = selectedOrder.OrderNameID,
                         Orders = new List<OrderFurniture> { selectedOrderFurniture }
                     };
 
@@ -296,6 +351,7 @@ else
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка при обновлении: {ex.Message}");
+                await JSRuntime.InvokeVoidAsync("alert", "Ошибка при обновлении!");
                 await editModalRef.Hide(); // Закрываем окно даже при ошибке
             }
         }
@@ -303,7 +359,14 @@ else
 
     private void DeleteItem(Order order)
     {
-        selectedOrder = order;
+        selectedOrder = new Order
+            {
+                ID = order.ID,
+                OrderNumber = order.OrderNumber,
+                OrderNameID = order.OrderNameID,
+                OrderName = order.OrderName // Копируем OrderName
+            };
+
         selectedOrderFurniture = order.Orders?.FirstOrDefault() ?? new OrderFurniture();
         deleteModalRef.Show();
     }
@@ -327,5 +390,10 @@ else
         // Загружаем свежие данные из базы
         orders = await OrderService.GetAllOrders();
         StateHasChanged();
+    }
+
+    private string GetOrderName(int orderNameId)
+    {
+        return orderNames.FirstOrDefault(x => x.ID == orderNameId)?.Name ?? "Неизвестно";
     }
 }
