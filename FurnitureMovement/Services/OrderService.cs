@@ -14,6 +14,11 @@ public interface IOrderService
     Task<List<OrderName>> GetAllOrderNames();
     Task Update(Order updatedOrder);
     Task Delete(int id);
+
+    // Добавляем новые методы для работы с наименованием оснастки
+    Task AddOrderName(OrderName orderName);
+    Task UpdateOrderName(OrderName orderName);
+    Task DeleteOrderName(int id);
 }
 
 public class OrderService : IOrderService
@@ -78,7 +83,10 @@ public class OrderService : IOrderService
     {
         using (var context = _myFactory.CreateDbContext())
         {
-            return await context.Orders.Include(o => o.Orders).ToListAsync();
+            return await context.Orders
+            .Include(o => o.Orders)
+            .Include(o => o.OrderName) // Это обязательно
+            .ToListAsync();
         }
     }
 
@@ -134,6 +142,52 @@ public class OrderService : IOrderService
                 context.OrderFurnitures.Add(updatedFurniture);
             }
 
+            await context.SaveChangesAsync();
+        }
+    }
+
+    // Работа с именованием оснастки
+    public async Task AddOrderName(OrderName orderName)
+    {
+        using (var context = _myFactory.CreateDbContext())
+        {
+            if (string.IsNullOrWhiteSpace(orderName.Name))
+                throw new ArgumentException("Наименование не может быть пустым");
+
+            await context.OrderNames.AddAsync(orderName);
+            await context.SaveChangesAsync();
+        }
+    }
+
+    // Обновляем оснастку
+    public async Task UpdateOrderName(OrderName orderName)
+    {
+        using (var context = _myFactory.CreateDbContext())
+        {
+            var existing = await context.OrderNames.FindAsync(orderName.ID);
+            if (existing == null)
+                throw new ArgumentException("Оснастка не найдена");
+
+            existing.Name = orderName.Name;
+            await context.SaveChangesAsync();
+        }
+    }
+
+    // Удаляем оснастку
+    public async Task DeleteOrderName(int id)
+    {
+        using (var context = _myFactory.CreateDbContext())
+        {
+            var orderName = await context.OrderNames.FindAsync(id);
+            if (orderName == null)
+                throw new ArgumentException("Оснастка не найдена");
+
+            // Проверяем, нет ли заказов с этой оснасткой
+            var hasOrders = await context.Orders.AnyAsync(o => o.OrderNameID == id);
+            if (hasOrders)
+                throw new InvalidOperationException("Нельзя удалить оснастку, так как существуют связанные заказы");
+
+            context.OrderNames.Remove(orderName);
             await context.SaveChangesAsync();
         }
     }

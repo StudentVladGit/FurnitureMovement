@@ -11,7 +11,7 @@
 
 <h1>Таблица оснастки</h1>
 
-<!-- Кнопка "Добавить" -->
+<!-- КНОПКА "ДОБАВИТЬ" -->
 <Button Color="Color.Primary" @onclick="ShowAddModal">Добавить</Button>
 
 @if (orders == null)
@@ -20,6 +20,7 @@
 }
 else
 {
+    <!-- ТАБЛИЦА ЗАКАЗА ОСНАСТКИ -->
     <DataGrid TItem="Order"
               Data="@orders"
               ShowPager="true">
@@ -63,8 +64,10 @@ else
             </DataGridColumn>
         </DataGridColumns>
     </DataGrid>
+    <!-- ТАБЛИЦА ЗАКАЗА ОСНАСТКИ -->
 }
 
+<!-- МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
 <Modal @ref="addModalRef">
     <ModalContent>
         <ModalHeader>
@@ -72,21 +75,11 @@ else
             <CloseButton @onclick="HideAddModal" />
         </ModalHeader>
         <ModalBody>
-            <!-- Поля для ввода данных -->
+            <!-- ПОЛЯ ДЛЯ ВВОДА ДАННЫХ -->
             <Field>
                 <FieldLabel>Номер заказа</FieldLabel>
                 <TextEdit @bind-Text="newOrder.OrderNumber" />
             </Field>
-            @* <Field>
-                <FieldLabel>Наименование</FieldLabel>
-                <Select TValue="int" @bind-SelectedValue="selectedOrder.OrderNameID">
-                    <SelectItem TValue="int" Value="0" Disabled Hidden>Выберите наименование</SelectItem>
-                    @foreach (var name in orderNames)
-                    {
-                        <SelectItem TValue="int" Value="@name.ID">@name.Name</SelectItem>
-                    }
-                </Select>
-            </Field> *@
             <Field>
             <FieldLabel>Наименование</FieldLabel>
             <Select TValue="int" @bind-SelectedValue="newOrder.OrderNameID">
@@ -132,7 +125,9 @@ else
         </ModalFooter>
     </ModalContent>
 </Modal>
+<!-- МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
 
+<!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
 <Modal @ref="editModalRef">
     <ModalContent>
         <ModalHeader>
@@ -181,8 +176,9 @@ else
         </ModalFooter>
     </ModalContent>
 </Modal>
+<!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
 
-<!-- Модальное окно удаления -->
+<!-- МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ -->
 <Modal @ref="deleteModalRef">
     <ModalContent>
         <ModalHeader>
@@ -198,7 +194,7 @@ else
              </Field>
              <Field>
                  <FieldLabel>Наименование</FieldLabel>
-                 <TextEdit ReadOnly Value="@GetOrderName(selectedOrder.OrderNameID)" />
+                 <TextEdit Text="@GetOrderName(selectedOrder.OrderNameID)" ReadOnly />
              </Field>
              <Field>
                  <FieldLabel>Количество</FieldLabel>
@@ -228,7 +224,10 @@ else
          </ModalFooter>
      </ModalContent>
  </Modal>
+ <!-- МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ -->
 
+
+ <!-- КОД -->
 @code {
     private Modal addModalRef = new Modal();
     private Modal editModalRef = new Modal();
@@ -236,6 +235,7 @@ else
     
     private List<Order> orders = new();
     private List<OrderName> orderNames = new();
+
     private Order newOrder = new();
     private OrderFurniture newOrderFurniture = new()
     {
@@ -256,16 +256,16 @@ else
     private void ShowAddModal()
     {
         newOrder = new Order
-            {
-                OrderNameID = 0 // Сбрасываем выбор при открытии
-            };
+        {
+            OrderNameID = 0 // Сбрасываем выбор при открытии
+        };
 
         newOrderFurniture = new OrderFurniture
-            {
-                OrderStatus = OrderStatus.Generated,
-                AdmissionDate = DateTime.Today,
-                OrderQuantity = 1
-            };
+        {
+            OrderStatus = OrderStatus.Generated,
+            AdmissionDate = DateTime.Today,
+            OrderQuantity = 1
+        };
 
         addModalRef.Show();
     }
@@ -280,6 +280,15 @@ else
         if (newOrder.OrderNameID <= 0)
         {
             await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите наименование!");
+            return;
+        }
+
+        <!-- ПОТОМ МОЖНО УДАЛИТЬ ДАННЫЙ КУСОК КОДА -->
+        // Проверяем, что OrderNameID существует
+        if (!orderNames.Any(x => x.ID == newOrder.OrderNameID))
+        {
+            await JSRuntime.InvokeVoidAsync("alert",
+                $"Наименование с ID {newOrder.OrderNameID} не существует!");
             return;
         }
 
@@ -302,23 +311,23 @@ else
     private void EditItem(Order order)
     {
         selectedOrder = new Order
-            {
-                ID = order.ID,
-                OrderNumber = order.OrderNumber,
-                OrderNameID = order.OrderNameID,
-                OrderName = order.OrderName
-            };
+        {
+            ID = order.ID,
+            OrderNumber = order.OrderNumber,
+            OrderNameID = order.OrderNameID,
+            OrderName = order.OrderName
+        };
 
         var originalFurniture = order.Orders?.FirstOrDefault();
         selectedOrderFurniture = new OrderFurniture
-            {
-                ID = originalFurniture?.ID ?? 0,
-                OrderQuantity = originalFurniture?.OrderQuantity ?? 1,
-                OrderStatus = originalFurniture?.OrderStatus ?? OrderStatus.Generated,
-                AdmissionDate = originalFurniture?.AdmissionDate ?? DateTime.Today,
-                OrderAuthor = originalFurniture?.OrderAuthor ?? string.Empty
-                // OrderID устанавливается автоматически при сохранении
-            };
+        {
+            ID = originalFurniture?.ID ?? 0,
+            OrderQuantity = originalFurniture?.OrderQuantity ?? 1,
+            OrderStatus = originalFurniture?.OrderStatus ?? OrderStatus.Generated,
+            AdmissionDate = originalFurniture?.AdmissionDate ?? DateTime.Today,
+            OrderAuthor = originalFurniture?.OrderAuthor ?? string.Empty
+            // OrderID устанавливается автоматически при сохранении
+        };
 
         editModalRef.Show();
     }
@@ -331,12 +340,12 @@ else
             {
                 // Создаем временный объект для обновления
                 var orderToUpdate = new Order
-                    {
-                        ID = selectedOrder.ID,
-                        OrderNumber = selectedOrder.OrderNumber,
-                        OrderNameID = selectedOrder.OrderNameID,
-                        Orders = new List<OrderFurniture> { selectedOrderFurniture }
-                    };
+                {
+                    ID = selectedOrder.ID,
+                    OrderNumber = selectedOrder.OrderNumber,
+                    OrderNameID = selectedOrder.OrderNameID,
+                    Orders = new List<OrderFurniture> { selectedOrderFurniture }
+                };
 
                 await OrderService.Update(orderToUpdate);
 
@@ -360,12 +369,13 @@ else
     private void DeleteItem(Order order)
     {
         selectedOrder = new Order
-            {
-                ID = order.ID,
-                OrderNumber = order.OrderNumber,
-                OrderNameID = order.OrderNameID,
-                OrderName = order.OrderName // Копируем OrderName
-            };
+        {
+            ID = order.ID,
+            OrderNumber = order.OrderNumber,
+            OrderNameID = order.OrderNameID,
+            // OrderName = order.OrderName // Копируем OrderName
+            OrderName = order.OrderName ?? orderNames.FirstOrDefault(x => x.ID == order.OrderNameID)
+        };
 
         selectedOrderFurniture = order.Orders?.FirstOrDefault() ?? new OrderFurniture();
         deleteModalRef.Show();
@@ -394,6 +404,15 @@ else
 
     private string GetOrderName(int orderNameId)
     {
-        return orderNames.FirstOrDefault(x => x.ID == orderNameId)?.Name ?? "Неизвестно";
+        // Если есть доступ к selectedOrder и его OrderName
+        if (selectedOrder?.OrderName != null && selectedOrder.OrderNameID == orderNameId)
+            return selectedOrder.OrderName.Name;
+
+        // Ищем в списке orderNames
+        var name = orderNames?.FirstOrDefault(x => x.ID == orderNameId);
+
+        // Если найдено - возвращаем имя, иначе "Неизвестно"
+        return name?.Name ?? "Неизвестно";
     }
+
 }

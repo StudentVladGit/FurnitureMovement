@@ -7,112 +7,131 @@
 @inject IJSRuntime JSRuntime
 @inject IOrderService OrderService
 
-<PageTitle>Отчеты</PageTitle>
+<PageTitle>Список оснастки</PageTitle>
 
-<h3>Тестовый DataGrid</h3>
+<h3>Доступная оснастка</h3>
 
-<Button Color="Color.Primary" @onclick="ShowModal">Test Blazorise Modal</Button>
+<Button Color="Color.Primary" @onclick="ShowAddModal">Добавить оснастку</Button>
 
-<DataGrid TItem="Order"
-              Data="@orders"
-              ShowPager="true">
-        <DataGridColumns>
-            <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер" />
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderName)" Caption="Наименование" />
-            <DataGridColumn TItem="Order" Caption="Количество">
-                <DisplayTemplate Context="order">
-                    @(order.Orders?.FirstOrDefault()?.OrderQuantity.ToString() ?? "0")
-                </DisplayTemplate>
-            </DataGridColumn>
-            <DataGridColumn TItem="Order" Caption="Статус">
-                <DisplayTemplate Context="order">
-                    @(order.Orders?.FirstOrDefault()?.OrderStatus.ToString() ?? "0")
-                </DisplayTemplate>
-            </DataGridColumn>
-            <DataGridColumn TItem="Order" Caption="Дата">
-                <DisplayTemplate Context="order">
-                    @(order.Orders?.FirstOrDefault()?.AdmissionDate.ToString("dd/MM/yyyy") ?? "")
-                </DisplayTemplate>
-            </DataGridColumn>
-            <DataGridColumn TItem="Order" Caption="Автор">
-                <DisplayTemplate Context="order">
-                    @(order.Orders?.FirstOrDefault()?.OrderAuthor ?? "")
-                </DisplayTemplate>
-            </DataGridColumn>
-            <DataGridColumn TItem="Order" Caption="Действия" Sortable="false">
-                <DisplayTemplate Context="orderItem">
-                    <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(orderItem)">
+<DataGrid TItem="OrderName"
+          Data="@orderNames"
+          ShowPager="true"
+          PageSize="10">
+    <DataGridColumns>
+        <DataGridColumn TItem="OrderName" Field="@nameof(OrderName.ID)" Caption="ID" />
+        <DataGridColumn TItem="OrderName" Field="@nameof(OrderName.Name)" Caption="Наименование" />
+        <DataGridColumn TItem="OrderName" Caption="Действия" Sortable="false">
+            <DisplayTemplate Context="item">
+                <div class="d-flex justify-content-end gap-2">
+                    <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(item)">
                         ✏️
                     </Button>
-                    <Button Color="Color.Danger" Size="Size.Small" class="ml-3" @onclick="() => DeleteItem(orderItem)">
+                    <Button Color="Color.Danger" Size="Size.Small" @onclick="() => DeleteItem(item)">
                         🗑️
                     </Button>
-                </DisplayTemplate>
-            </DataGridColumn>
-        </DataGridColumns>
+                </div>
+            </DisplayTemplate>
+        </DataGridColumn>
+    </DataGridColumns>
 </DataGrid>
 
-<Modal @ref="modalRef">
+<!-- Модальное окно добавления -->
+<Modal @ref="addModalRef">
     <ModalContent>
         <ModalHeader>
-            <ModalTitle>Test Modal</ModalTitle>
-            <CloseButton @onclick="HideModal" />
+            <ModalTitle>@(isEditing ? "Редактировать" : "Добавить") оснастку</ModalTitle>
+            <CloseButton @onclick="HideAddModal" />
         </ModalHeader>
         <ModalBody>
-            <p>If you see this, Blazorise works!</p>
+            <Field>
+                <FieldLabel>Наименование оснастки</FieldLabel>
+                <TextEdit @bind-Text="currentOrderName.Name" />
+            </Field>
         </ModalBody>
         <ModalFooter>
-            <Button Color="Color.Secondary" @onclick="HideModal">Close</Button>
+            <Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
+            <Button Color="Color.Primary" @onclick="SaveOrderName">Сохранить</Button>
         </ModalFooter>
     </ModalContent>
 </Modal>
 
 @code {
-    private Modal modalRef = new Modal();   
-    private List<Order> orders = new();
+    private Modal addModalRef = new Modal();
+    private List<OrderName> orderNames = new();
+    private OrderName currentOrderName = new();
+    private bool isEditing = false;
 
-    public class TestItem
+    protected override async Task OnInitializedAsync()
     {
-        public int Id { get; set; }
-        public string? Name { get; set; }
-        public int Quantity { get; set; }
-        public DateTime CreatedDate { get; set; }
+        await LoadOrderNames();
     }
 
-    protected override void OnInitialized()
+    private async Task LoadOrderNames()
     {
-        // testData = Enumerable.Range(1, 20).Select(i => new TestItem
-        // {
-        //     Id = i,
-        //     Name = $"Товар {i}",
-        //     Quantity = Random.Shared.Next(1, 100),
-        //     CreatedDate = DateTime.Now.AddDays(-Random.Shared.Next(1, 30))
-        // }).ToList();
+        orderNames = await OrderService.GetAllOrderNames();
+        StateHasChanged();
     }
 
-    private void ShowModal()
+    private void ShowAddModal()
     {
-        modalRef?.Show();
+        currentOrderName = new OrderName();
+        isEditing = false;
+        addModalRef.Show();
     }
 
-    private void HideModal()
+    private void HideAddModal()
     {
-        modalRef?.Hide();
+        addModalRef.Hide();
     }
 
-    private void EditItem(Order item)
+    private async Task SaveOrderName()
     {
-        // Console.WriteLine($"Редактируем элемент с ID: {item.Id}");
+        if (string.IsNullOrWhiteSpace(currentOrderName.Name))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Наименование не может быть пустым!");
+            return;
+        }
+
+        try
+        {
+            if (isEditing)
+            {
+                await OrderService.UpdateOrderName(currentOrderName);
+            }
+            else
+            {
+                await OrderService.AddOrderName(currentOrderName);
+            }
+
+            await LoadOrderNames();
+            addModalRef.Hide();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", ex.Message);
+        }
     }
 
-    private async Task DeleteItem(Order item)
+    private void EditItem(OrderName item)
     {
-        // var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Вы уверены, что хотите удалить {item.Name}?");
-        // if (confirm)
-        // {
-        //     testData.Remove(item);
-        //     StateHasChanged();
-        // }
+        currentOrderName = new OrderName { ID = item.ID, Name = item.Name };
+        isEditing = true;
+        addModalRef.Show();
+    }
+
+    private async Task DeleteItem(OrderName item)
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Удалить оснастку {item.Name}?");
+        if (!confirm) return;
+
+        try
+        {
+            await OrderService.DeleteOrderName(item.ID);
+            await LoadOrderNames();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", ex.Message);
+        }
     }
 }
