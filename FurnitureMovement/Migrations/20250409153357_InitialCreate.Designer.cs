@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20250408151943_InitialCreate")]
+    [Migration("20250409153357_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
