@@ -29,7 +29,7 @@ else
             <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер" />
             <DataGridColumn TItem="Order" Caption="Наименование">
                 <DisplayTemplate Context="order">
-                    @GetOrderName(order.OrderNameID)
+                    @(order.Orders?.FirstOrDefault()?.OrderName?.Name ?? "Не указано")
                 </DisplayTemplate>
             </DataGridColumn>
             <DataGridColumn TItem="Order" Caption="Количество">
@@ -39,17 +39,17 @@ else
             </DataGridColumn>
             <DataGridColumn TItem="Order" Caption="Статус">
                 <DisplayTemplate Context="order">
-                    @(order.Orders?.FirstOrDefault()?.OrderStatus.ToString() ?? "0")
+                    @order.OrderStatus  <!-- Use GetEnumDescription to display the description -->
                 </DisplayTemplate>
             </DataGridColumn>
             <DataGridColumn TItem="Order" Caption="Дата">
                 <DisplayTemplate Context="order">
-                    @(order.Orders?.FirstOrDefault()?.AdmissionDate.ToString("dd/MM/yyyy") ?? "")
+                    @(order.AdmissionDate.ToString("dd/MM/yyyy"))
                 </DisplayTemplate>
             </DataGridColumn>
             <DataGridColumn TItem="Order" Caption="Автор">
                 <DisplayTemplate Context="order">
-                    @(order.Orders?.FirstOrDefault()?.OrderAuthor ?? "")
+                    @(order.OrderAuthor ?? "")
                 </DisplayTemplate>
             </DataGridColumn>
             <DataGridColumn TItem="Order" Caption="Действия" Sortable="false">
@@ -82,7 +82,7 @@ else
             </Field>
             <Field>
             <FieldLabel>Наименование</FieldLabel>
-            <Select TValue="int" @bind-SelectedValue="newOrder.OrderNameID">
+            <Select TValue="int" @bind-SelectedValue="newOrderFurniture.OrderNameID">
                 <SelectItem TValue="int" Value="0" Disabled Hidden>Выберите наименование</SelectItem>
                     @if (orderNames != null)
                     {
@@ -92,7 +92,7 @@ else
                         }
                     }
                 </Select>
-                @if (newOrder.OrderNameID <= 0)
+                @if (newOrderFurniture.OrderNameID <= 0)
                 {
                     <FieldHelp Style="color: red;">Необходимо выбрать наименование</FieldHelp>
                 }
@@ -103,7 +103,7 @@ else
             </Field>
             <Field>
                 <FieldLabel>Статус</FieldLabel>
-                <Select TValue="OrderStatus" @bind-SelectedValue="newOrderFurniture.OrderStatus">
+                <Select TValue="OrderStatus" @bind-SelectedValue="newOrder.OrderStatus">
                     @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
                     {
                         <SelectItem TValue="OrderStatus" Value="@status">@status.ToString()</SelectItem>
@@ -112,11 +112,11 @@ else
             </Field>
             <Field>
                 <FieldLabel>Дата</FieldLabel>
-                <DateEdit @bind-Date="newOrderFurniture.AdmissionDate" />
+                <DateEdit @bind-Date="newOrder.AdmissionDate" />
             </Field>
             <Field>
                 <FieldLabel>Автор</FieldLabel>
-                <TextEdit @bind-Text="newOrderFurniture.OrderAuthor" />
+                <TextEdit @bind-Text="newOrder.OrderAuthor" />
             </Field>
         </ModalBody>
         <ModalFooter>
@@ -141,7 +141,7 @@ else
             </Field>
             <Field>
                 <FieldLabel>Наименование</FieldLabel>
-                <Select TValue="int" @bind-SelectedValue="selectedOrder.OrderNameID">
+                <Select TValue="int" @bind-SelectedValue="selectedOrderFurniture.OrderNameID">
                     @foreach (var name in orderNames)
                     {
                         <SelectItem TValue="int" Value="@name.ID">@name.Name</SelectItem>
@@ -154,7 +154,7 @@ else
             </Field>
             <Field>
                 <FieldLabel>Статус</FieldLabel>
-                <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrderFurniture.OrderStatus">
+                <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus">
                     @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
                     {
                         <SelectItem TValue="OrderStatus" Value="@status">@status.ToString()</SelectItem>
@@ -163,11 +163,11 @@ else
             </Field>
             <Field>
                 <FieldLabel>Дата</FieldLabel>
-                <DateEdit @bind-Date="selectedOrderFurniture.AdmissionDate" />
+                <DateEdit @bind-Date="selectedOrder.AdmissionDate" />
             </Field>
             <Field>
                 <FieldLabel>Автор</FieldLabel>
-                <TextEdit @bind-Text="selectedOrderFurniture.OrderAuthor" />
+                <TextEdit @bind-Text="selectedOrder.OrderAuthor" />
             </Field>
         </ModalBody>
         <ModalFooter>
@@ -187,14 +187,13 @@ else
         </ModalHeader>
         <ModalBody>
             <p>Вы уверены, что хотите удалить этот заказ?</p>
-
             <Field>
                 <FieldLabel>Номер заказа</FieldLabel>
                 <TextEdit @bind-Text="selectedOrder.OrderNumber" ReadOnly />
              </Field>
              <Field>
                  <FieldLabel>Наименование</FieldLabel>
-                 <TextEdit Text="@GetOrderName(selectedOrder.OrderNameID)" ReadOnly />
+                 <TextEdit Text="@GetOrderName(selectedOrderFurniture.OrderNameID)" ReadOnly />
              </Field>
              <Field>
                  <FieldLabel>Количество</FieldLabel>
@@ -202,7 +201,7 @@ else
              </Field>
              <Field>
                  <FieldLabel>Статус</FieldLabel>
-                 <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrderFurniture.OrderStatus" Disabled>
+                 <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus" Disabled>
                     @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
                     {
                         <SelectItem TValue="OrderStatus" Value="@status">@status.ToString()</SelectItem>
@@ -211,11 +210,11 @@ else
             </Field>
             <Field>
                 <FieldLabel>Дата</FieldLabel>
-                <DateEdit @bind-Date="selectedOrderFurniture.AdmissionDate" ReadOnly />
+                <DateEdit @bind-Date="selectedOrder.AdmissionDate" ReadOnly />
              </Field>
              <Field>
                  <FieldLabel>Автор</FieldLabel>
-                 <TextEdit @bind-Text="selectedOrderFurniture.OrderAuthor" ReadOnly />
+                 <TextEdit @bind-Text="selectedOrder.OrderAuthor" ReadOnly />
              </Field>
          </ModalBody>
          <ModalFooter>
@@ -228,56 +227,62 @@ else
 
 
  <!-- КОД -->
-@code {
+ @code {
     private Modal addModalRef = new Modal();
     private Modal editModalRef = new Modal();
     private Modal deleteModalRef = new Modal();
-    
+
     private List<Order> orders = new();
     private List<OrderName> orderNames = new();
 
-    private Order newOrder = new();
-    private OrderFurniture newOrderFurniture = new()
+    private Order newOrder = new()
     {
         OrderStatus = OrderStatus.Generated,
-        AdmissionDate = DateTime.Today,
+        AdmissionDate = DateTime.Today
+    };
+    private OrderFurniture newOrderFurniture = new()
+    {
         OrderQuantity = 1
     };
 
     private Order selectedOrder = new();
     private OrderFurniture selectedOrderFurniture = new();
 
+    <!-- ИНИЦИАЛИЗАЦИЯ -->
     protected override async Task OnInitializedAsync()
     {
         await Refresh();
         orderNames = await OrderService.GetAllOrderNames();
     }
 
+    <!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
     private void ShowAddModal()
     {
-        newOrder = new Order
+        newOrderFurniture = new OrderFurniture
         {
-            OrderNameID = 0 // Сбрасываем выбор при открытии
+            OrderNameID = 0, // Сбрасываем выбор при открытии
+            OrderQuantity = 1
         };
 
-        newOrderFurniture = new OrderFurniture
+        newOrder = new Order
         {
             OrderStatus = OrderStatus.Generated,
             AdmissionDate = DateTime.Today,
-            OrderQuantity = 1
         };
 
         addModalRef.Show();
     }
 
+    <!-- ЗАКРЫТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
     private void HideAddModal()
     {
         addModalRef.Hide();
     }
 
+    <!-- СОХРАНИТЬ ЗАКАЗ -->
     private async Task SaveOrder()
     {
-        if (newOrder.OrderNameID <= 0)
+        if (newOrderFurniture.OrderNameID <= 0)
         {
             await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите наименование!");
             return;
@@ -285,10 +290,10 @@ else
 
         <!-- ПОТОМ МОЖНО УДАЛИТЬ ДАННЫЙ КУСОК КОДА -->
         // Проверяем, что OrderNameID существует
-        if (!orderNames.Any(x => x.ID == newOrder.OrderNameID))
+        if (!orderNames.Any(x => x.ID == newOrderFurniture.OrderNameID))
         {
             await JSRuntime.InvokeVoidAsync("alert",
-                $"Наименование с ID {newOrder.OrderNameID} не существует!");
+                $"Наименование с ID {newOrderFurniture.OrderNameID} не существует!");
             return;
         }
 
@@ -308,52 +313,41 @@ else
         }
     }
 
+    <!-- РЕДАКТИРОВАТЬ ЗАКАЗ -->
     private void EditItem(Order order)
     {
         selectedOrder = new Order
-        {
-            ID = order.ID,
-            OrderNumber = order.OrderNumber,
-            OrderNameID = order.OrderNameID,
-            OrderName = order.OrderName
-        };
+            {
+                ID = order.ID,
+                OrderNumber = order.OrderNumber,
+                OrderStatus = order.OrderStatus,
+                AdmissionDate = order.AdmissionDate,
+                OrderAuthor = order.OrderAuthor
+            };
 
         var originalFurniture = order.Orders?.FirstOrDefault();
         selectedOrderFurniture = new OrderFurniture
-        {
-            ID = originalFurniture?.ID ?? 0,
-            OrderQuantity = originalFurniture?.OrderQuantity ?? 1,
-            OrderStatus = originalFurniture?.OrderStatus ?? OrderStatus.Generated,
-            AdmissionDate = originalFurniture?.AdmissionDate ?? DateTime.Today,
-            OrderAuthor = originalFurniture?.OrderAuthor ?? string.Empty
-            // OrderID устанавливается автоматически при сохранении
-        };
+            {
+                ID = originalFurniture?.ID ?? 0,
+                OrderQuantity = originalFurniture?.OrderQuantity ?? 1,
+                OrderNameID = originalFurniture?.OrderNameID ?? 0,
+                OrderName = originalFurniture?.OrderName
+            };
 
         editModalRef.Show();
     }
 
+    <!-- ОБНОВИТЬ ЗАКАЗ -->
     private async Task UpdateOrder()
     {
         if (selectedOrder != null && selectedOrderFurniture != null)
         {
             try
             {
-                // Создаем временный объект для обновления
-                var orderToUpdate = new Order
-                {
-                    ID = selectedOrder.ID,
-                    OrderNumber = selectedOrder.OrderNumber,
-                    OrderNameID = selectedOrder.OrderNameID,
-                    Orders = new List<OrderFurniture> { selectedOrderFurniture }
-                };
+                // Обновляем основные свойства заказа
+                selectedOrder.Orders = new List<OrderFurniture> { selectedOrderFurniture };
 
-                await OrderService.Update(orderToUpdate);
-
-                //// Обновляем данные и закрываем модальное окно
-                //await Refresh();
-                //await editModalRef.Hide();
-
-                // Убедимся, что окно закрывается в любом случае
+                await OrderService.Update(selectedOrder);
                 await editModalRef.Hide();
                 await Refresh();
             }
@@ -361,26 +355,46 @@ else
             {
                 Console.WriteLine($"Ошибка при обновлении: {ex.Message}");
                 await JSRuntime.InvokeVoidAsync("alert", "Ошибка при обновлении!");
-                await editModalRef.Hide(); // Закрываем окно даже при ошибке
             }
         }
     }
 
+    <!-- УДАЛИТЬ ЗАКАЗ -->
     private void DeleteItem(Order order)
     {
+        // Создаем глубокую копию заказа
         selectedOrder = new Order
-        {
-            ID = order.ID,
-            OrderNumber = order.OrderNumber,
-            OrderNameID = order.OrderNameID,
-            // OrderName = order.OrderName // Копируем OrderName
-            OrderName = order.OrderName ?? orderNames.FirstOrDefault(x => x.ID == order.OrderNameID)
-        };
+            {
+                ID = order.ID,
+                OrderNumber = order.OrderNumber,
+                OrderStatus = order.OrderStatus,
+                AdmissionDate = order.AdmissionDate,
+                OrderAuthor = order.OrderAuthor,
+                Orders = new List<OrderFurniture>()
+            };
 
-        selectedOrderFurniture = order.Orders?.FirstOrDefault() ?? new OrderFurniture();
+        // Копируем данные оснастки
+        if (order.Orders?.Any() == true)
+        {
+            var originalFurniture = order.Orders.First();
+            selectedOrderFurniture = new OrderFurniture
+                {
+                    ID = originalFurniture.ID,
+                    OrderQuantity = originalFurniture.OrderQuantity,
+                    OrderNameID = originalFurniture.OrderNameID,
+                    OrderName = originalFurniture.OrderName
+                };
+            selectedOrder.Orders.Add(selectedOrderFurniture);
+        }
+        else
+        {
+            selectedOrderFurniture = new OrderFurniture();
+        }
+
         deleteModalRef.Show();
     }
 
+    <!-- ПОДТВЕРДИТЬ УДАЛЕНИЕ ЗАКАЗ -->
     private async Task ConfirmDelete()
     {
         if (selectedOrder != null)
@@ -391,6 +405,7 @@ else
         }
     }
 
+    <!-- ОБНОВИТЬ -->
     private async Task Refresh()
     {
         // Очищаем текущий список перед загрузкой новых данных
@@ -402,11 +417,12 @@ else
         StateHasChanged();
     }
 
+    <!-- ПОЛУЧИТЬ НАИМЕНОВАНИЕ ОСНАСТКИ -->
     private string GetOrderName(int orderNameId)
     {
         // Если есть доступ к selectedOrder и его OrderName
-        if (selectedOrder?.OrderName != null && selectedOrder.OrderNameID == orderNameId)
-            return selectedOrder.OrderName.Name;
+        if (selectedOrderFurniture?.OrderName != null && selectedOrderFurniture.OrderNameID == orderNameId)
+            return selectedOrderFurniture.OrderName.Name;
 
         // Ищем в списке orderNames
         var name = orderNames?.FirstOrDefault(x => x.ID == orderNameId);

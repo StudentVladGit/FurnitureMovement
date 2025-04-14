@@ -6,6 +6,26 @@ using System.Reflection;
 
 namespace FurnitureMovement.Data
 {
+    public enum OrderStatus : long
+    {
+        [Description("Сформирован")]
+        Generated = 0,
+
+        [Description("Оформлен")]
+        Decorated = 1,
+
+        [Description("ВПроцессеИзготовления")]
+        InThePreparationProcess = 2,
+
+        [Description("Изготовлено")]
+        Manufactured = 3,
+
+        [Description("Выполнен")]
+        Completed = 4,
+
+        [Description("Отменен")]
+        Cancelled = 5
+    }
     public class Order
     {
         [Key]
@@ -17,13 +37,17 @@ namespace FurnitureMovement.Data
         [StringLength(50)]
         public string? OrderNumber { get; set; }
 
-        // Внешний ключ для связи с OrderName
-        [Required]
-        public int OrderNameID { get; set; } = 0;
+        [Column(TypeName = "date")]
+        [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
+        public DateTime AdmissionDate { get; set; }
 
-        // Навигационное свойство
-        [ForeignKey("OrderNameID")]
-        public OrderName? OrderName { get; set; }
+        [Required]
+        [StringLength(50)]
+        public OrderStatus OrderStatus { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string? OrderAuthor { get; set; }
 
         public List<OrderFurniture>? Orders { get; set; }
     }

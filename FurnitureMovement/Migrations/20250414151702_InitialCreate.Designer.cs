@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20250409153357_InitialCreate")]
+    [Migration("20250414151702_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -33,17 +33,24 @@ namespace FurnitureMovement.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
 
-                    b.Property<int>("OrderNameID")
-                        .HasColumnType("integer");
+                    b.Property<DateTime>("AdmissionDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("OrderAuthor")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("OrderNumber")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.HasKey("ID");
+                    b.Property<long>("OrderStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("bigint");
 
-                    b.HasIndex("OrderNameID");
+                    b.HasKey("ID");
 
                     b.ToTable("Orders");
                 });
@@ -56,27 +63,20 @@ namespace FurnitureMovement.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
 
-                    b.Property<DateTime>("AdmissionDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("OrderAuthor")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<int>("OrderID")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OrderNameID")
                         .HasColumnType("integer");
 
                     b.Property<long>("OrderQuantity")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("OrderStatus")
-                        .HasMaxLength(50)
-                        .HasColumnType("bigint");
-
                     b.HasKey("ID");
 
                     b.HasIndex("OrderID");
+
+                    b.HasIndex("OrderNameID");
 
                     b.ToTable("OrderFurnitures");
                 });
@@ -99,17 +99,6 @@ namespace FurnitureMovement.Migrations
                     b.ToTable("OrderNames");
                 });
 
-            modelBuilder.Entity("FurnitureMovement.Data.Order", b =>
-                {
-                    b.HasOne("FurnitureMovement.Data.OrderName", "OrderName")
-                        .WithMany()
-                        .HasForeignKey("OrderNameID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("OrderName");
-                });
-
             modelBuilder.Entity("FurnitureMovement.Data.OrderFurniture", b =>
                 {
                     b.HasOne("FurnitureMovement.Data.Order", "Order")
@@ -118,7 +107,15 @@ namespace FurnitureMovement.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("FurnitureMovement.Data.OrderName", "OrderName")
+                        .WithMany()
+                        .HasForeignKey("OrderNameID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Order");
+
+                    b.Navigation("OrderName");
                 });
 
             modelBuilder.Entity("FurnitureMovement.Data.Order", b =>
