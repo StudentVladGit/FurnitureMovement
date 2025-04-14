@@ -37,7 +37,7 @@ public class OrderService : IOrderService
     {
         using (var context = _myFactory.CreateDbContext())
         {
-            var orderNameExists = await context.OrderNames.AnyAsync(x => x.ID == newOrder.OrderNameID);
+            var orderNameExists = await context.OrderNames.AnyAsync(x => x.ID == newOrderFurniture.OrderNameID);
             if (!orderNameExists)
             {
                 throw new ArgumentException("Указанное наименование не существует");
@@ -84,9 +84,24 @@ public class OrderService : IOrderService
         using (var context = _myFactory.CreateDbContext())
         {
             return await context.Orders
-            .Include(o => o.Orders)
-            .Include(o => o.OrderName) // Это обязательно
-            .ToListAsync();
+                .Include(o => o.Orders)
+                .Select(o => new Order
+                {
+                    ID = o.ID,
+                    OrderNumber = o.OrderNumber,
+                    OrderStatus = o.OrderStatus,
+                    AdmissionDate = o.AdmissionDate,
+                    OrderAuthor = o.OrderAuthor,
+                    Orders = o.Orders.Select(of => new OrderFurniture
+                    {
+                        ID = of.ID,
+                        OrderID = of.OrderID,
+                        OrderQuantity = of.OrderQuantity,
+                        OrderNameID = of.OrderNameID,
+                        OrderName = context.OrderNames.FirstOrDefault(on => on.ID == of.OrderNameID)
+                    }).ToList()
+                })
+                .ToListAsync();
         }
     }
 
@@ -108,9 +123,14 @@ public class OrderService : IOrderService
 
             if (existingOrder == null) return;
 
+            // Сохраняем старый статус ДО обновления
+            var oldStatus = existingOrder.OrderStatus;
+
             // Обновляем основные свойства заказа
             existingOrder.OrderNumber = updatedOrder.OrderNumber;
-            existingOrder.OrderNameID = updatedOrder.OrderNameID;
+            existingOrder.OrderStatus = updatedOrder.OrderStatus; // Статус обновляется здесь
+            existingOrder.AdmissionDate = updatedOrder.AdmissionDate;
+            existingOrder.OrderAuthor = updatedOrder.OrderAuthor;
 
             // Получаем существующую и новую OrderFurniture
             var existingFurniture = existingOrder.Orders?.FirstOrDefault();
@@ -118,28 +138,23 @@ public class OrderService : IOrderService
 
             if (existingFurniture != null && updatedFurniture != null)
             {
-                // Сохраняем старый статус для проверки изменений
-                var oldStatus = existingFurniture.OrderStatus;
-
                 // Обновляем свойства
                 existingFurniture.OrderQuantity = updatedFurniture.OrderQuantity;
-                existingFurniture.OrderStatus = updatedFurniture.OrderStatus;
-                existingFurniture.AdmissionDate = updatedFurniture.AdmissionDate;
-                existingFurniture.OrderAuthor = updatedFurniture.OrderAuthor;
-
-                // Проверяем изменение статуса
-                if (oldStatus != existingFurniture.OrderStatus)
-                {
-                    _notificationService.AddNotification(
-                        $"{updatedOrder.OrderNumber} изменил статус на {existingFurniture.OrderStatus} в {DateTime.Now:HH:mm}",
-                        existingFurniture.OrderStatus);
-                }
+                existingFurniture.OrderNameID = updatedFurniture.OrderNameID;
             }
             else if (updatedFurniture != null)
             {
                 // Если не было OrderFurniture, добавляем новую
                 updatedFurniture.OrderID = existingOrder.ID;
                 context.OrderFurnitures.Add(updatedFurniture);
+            }
+
+            // Проверяем изменение статуса ПОСЛЕ обновления
+            if (oldStatus != existingOrder.OrderStatus)
+            {
+                _notificationService.AddNotification(
+                    $"{existingOrder.OrderNumber} изменил статус на {existingOrder.OrderStatus} в {DateTime.Now:HH:mm}",
+                    existingOrder.OrderStatus);
             }
 
             await context.SaveChangesAsync();
@@ -183,8 +198,8 @@ public class OrderService : IOrderService
                 throw new ArgumentException("Оснастка не найдена");
 
             // Проверяем, нет ли заказов с этой оснасткой
-            var hasOrders = await context.Orders.AnyAsync(o => o.OrderNameID == id);
-            if (hasOrders)
+            var hasOrderFurniture = await context.OrderFurnitures.AnyAsync(od => od.OrderNameID == id);
+            if (hasOrderFurniture)
                 throw new InvalidOperationException("Нельзя удалить оснастку, так как существуют связанные заказы");
 
             context.OrderNames.Remove(orderName);
