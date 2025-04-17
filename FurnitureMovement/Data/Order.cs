@@ -44,11 +44,13 @@ namespace FurnitureMovement.Data
         [Required]
         [StringLength(50)]
         public OrderStatus OrderStatus { get; set; }
+        // Внешний ключ для связи с OrderAuthor
+        public int OrderAuthorID { get; set; }
 
-        [Required]
-        [StringLength(50)]
-        public string? OrderAuthor { get; set; }
+        // Навигационное свойство
+        [ForeignKey("OrderAuthorID")]
+        public OrderAuthor? OrderAuthor { get; set; }
 
-        public List<OrderFurniture>? Orders { get; set; }
+        public List<Furniture>? Furnitures { get; set; }
     }
 }

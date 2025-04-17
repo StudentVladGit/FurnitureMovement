@@ -5,20 +5,18 @@ using System.ComponentModel;
 namespace FurnitureMovement.Data
 {
     // OrderFurniture.cs
-    public class OrderFurniture
+    public class Furniture
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Display(Name = "#")]
         public int ID { get; set; }
 
-        // Внешний ключ для связи с OrderName
         [Required]
-        public int OrderNameID { get; set; } = 0;
+        public int FurnitureNameID { get; set; } // Было OrderNameID
 
-        // Навигационное свойство
-        [ForeignKey("OrderNameID")]
-        public OrderName? OrderName { get; set; }
+        [ForeignKey("FurnitureNameID")]
+        public FurnitureName? FurnitureName { get; set; } // Было OrderName
 
         [Range(1, 99999)]
         public long OrderQuantity { get; set; }
