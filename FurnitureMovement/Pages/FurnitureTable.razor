@@ -1,4 +1,4 @@
-﻿@page "/fetchdata"
+﻿@page "/FurnitureTable"
 @using FurnitureMovement.Data
 @using FurnitureMovement.Services
 @using Blazorise
@@ -9,18 +9,18 @@
 
 <PageTitle>Список оснастки</PageTitle>
 
-<h3>Доступная оснастка</h3>
+<h3>Таблица списка оснастки</h3>
 
 <Button Color="Color.Primary" @onclick="ShowAddModal">Добавить оснастку</Button>
 
-<DataGrid TItem="OrderName"
-          Data="@orderNames"
+<DataGrid TItem="FurnitureName"
+          Data="@FurnitureNames"
           ShowPager="true"
           PageSize="10">
     <DataGridColumns>
-        <DataGridColumn TItem="OrderName" Field="@nameof(OrderName.ID)" Caption="ID" />
-        <DataGridColumn TItem="OrderName" Field="@nameof(OrderName.Name)" Caption="Наименование" />
-        <DataGridColumn TItem="OrderName" Caption="Действия" Sortable="false">
+        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.ID)" Caption="ID" />
+        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.Name)" Caption="Наименование" />
+        <DataGridColumn TItem="FurnitureName" Caption="Действия" Sortable="false">
             <DisplayTemplate Context="item">
                 <div class="d-flex justify-content-end gap-2">
                     <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(item)">
@@ -57,8 +57,8 @@
 
 @code {
     private Modal addModalRef = new Modal();
-    private List<OrderName> orderNames = new();
-    private OrderName currentOrderName = new();
+    private List<FurnitureName> FurnitureNames = new();
+    private FurnitureName currentOrderName = new();
     private bool isEditing = false;
 
     protected override async Task OnInitializedAsync()
@@ -68,13 +68,13 @@
 
     private async Task LoadOrderNames()
     {
-        orderNames = await OrderService.GetAllOrderNames();
+        FurnitureNames = await OrderService.GetAllOrderNames();
         StateHasChanged();
     }
 
     private void ShowAddModal()
     {
-        currentOrderName = new OrderName();
+        currentOrderName = new FurnitureName();
         isEditing = false;
         addModalRef.Show();
     }
@@ -112,14 +112,14 @@
         }
     }
 
-    private void EditItem(OrderName item)
+    private void EditItem(FurnitureName item)
     {
-        currentOrderName = new OrderName { ID = item.ID, Name = item.Name };
+        currentOrderName = new FurnitureName { ID = item.ID, Name = item.Name };
         isEditing = true;
         addModalRef.Show();
     }
 
-    private async Task DeleteItem(OrderName item)
+    private async Task DeleteItem(FurnitureName item)
     {
         var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Удалить оснастку {item.Name}?");
         if (!confirm) return;

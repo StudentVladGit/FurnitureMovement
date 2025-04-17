@@ -22,8 +22,6 @@ builder.Services
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-builder.Services.AddSingleton<WeatherForecastService>();
-
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var ConnectionString = builder.Configuration.GetConnectionString(nameof(OrderContext));

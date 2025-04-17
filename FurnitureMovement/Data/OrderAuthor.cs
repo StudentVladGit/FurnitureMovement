@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FurnitureMovement.Data
 {
-    public class OrderName
+    public class OrderAuthor
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -11,9 +11,6 @@ namespace FurnitureMovement.Data
 
         [Required]
         [StringLength(50)]
-        public string? Name { get; set; }  // Само название
-
-        // Дополнительные поля, если нужно (описание, категория и т.д.)
-        //public string? Drawing { get; set; }
+        public string? Name { get; set; }  
     }
 }

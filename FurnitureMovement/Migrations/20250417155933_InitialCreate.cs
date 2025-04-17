@@ -13,7 +13,7 @@ namespace FurnitureMovement.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "OrderNames",
+                name: "FurnitureNames",
                 columns: table => new
                 {
                     ID = table.Column<int>(type: "integer", nullable: false)
@@ -22,7 +22,20 @@ namespace FurnitureMovement.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OrderNames", x => x.ID);
+                    table.PrimaryKey("PK_FurnitureNames", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderAuthors",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderAuthors", x => x.ID);
                 });
 
             migrationBuilder.CreateTable(
@@ -34,34 +47,40 @@ namespace FurnitureMovement.Migrations
                     OrderNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     AdmissionDate = table.Column<DateTime>(type: "date", nullable: false),
                     OrderStatus = table.Column<long>(type: "bigint", maxLength: 50, nullable: false),
-                    OrderAuthor = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                    OrderAuthorID = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Orders", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_Orders_OrderAuthors_OrderAuthorID",
+                        column: x => x.OrderAuthorID,
+                        principalTable: "OrderAuthors",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "OrderFurnitures",
+                name: "Furnitures",
                 columns: table => new
                 {
                     ID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
-                    OrderNameID = table.Column<int>(type: "integer", nullable: false),
+                    FurnitureNameID = table.Column<int>(type: "integer", nullable: false),
                     OrderQuantity = table.Column<long>(type: "bigint", nullable: false),
                     OrderID = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OrderFurnitures", x => x.ID);
+                    table.PrimaryKey("PK_Furnitures", x => x.ID);
                     table.ForeignKey(
-                        name: "FK_OrderFurnitures_OrderNames_OrderNameID",
-                        column: x => x.OrderNameID,
-                        principalTable: "OrderNames",
+                        name: "FK_Furnitures_FurnitureNames_FurnitureNameID",
+                        column: x => x.FurnitureNameID,
+                        principalTable: "FurnitureNames",
                         principalColumn: "ID",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_OrderFurnitures_Orders_OrderID",
+                        name: "FK_Furnitures_Orders_OrderID",
                         column: x => x.OrderID,
                         principalTable: "Orders",
                         principalColumn: "ID",
@@ -69,27 +88,35 @@ namespace FurnitureMovement.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderFurnitures_OrderID",
-                table: "OrderFurnitures",
+                name: "IX_Furnitures_FurnitureNameID",
+                table: "Furnitures",
+                column: "FurnitureNameID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Furnitures_OrderID",
+                table: "Furnitures",
                 column: "OrderID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderFurnitures_OrderNameID",
-                table: "OrderFurnitures",
-                column: "OrderNameID");
+                name: "IX_Orders_OrderAuthorID",
+                table: "Orders",
+                column: "OrderAuthorID");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "OrderFurnitures");
+                name: "Furnitures");
 
             migrationBuilder.DropTable(
-                name: "OrderNames");
+                name: "FurnitureNames");
 
             migrationBuilder.DropTable(
                 name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "OrderAuthors");
         }
     }
 }

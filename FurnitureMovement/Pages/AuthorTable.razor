@@ -1,0 +1,142 @@
+﻿@page "/AuthorTable"
+@using FurnitureMovement.Data
+@using FurnitureMovement.Services
+@using Blazorise
+@using Blazorise.DataGrid
+@using Blazorise.Icons.FontAwesome
+@inject IJSRuntime JSRuntime
+@inject IOrderService OrderService
+
+<PageTitle>Список авторов</PageTitle>
+
+<h3>Талица авторов заказов</h3>
+
+<Button Color="Color.Primary" @onclick="ShowAddModal">Добавить автора</Button>
+
+<DataGrid TItem="OrderAuthor"
+          Data="@authors"
+          ShowPager="true"
+          PageSize="10">
+    <DataGridColumns>
+        <DataGridColumn TItem="OrderAuthor" Field="@nameof(OrderAuthor.ID)" Caption="ID" />
+        <DataGridColumn TItem="OrderAuthor" Field="@nameof(OrderAuthor.Name)" Caption="ФИО автора" />
+        <DataGridColumn TItem="OrderAuthor" Caption="Действия" Sortable="false">
+            <DisplayTemplate Context="item">
+                <div class="d-flex justify-content-end gap-2">
+                    <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(item)">
+                        ✏️
+                    </Button>
+                    <Button Color="Color.Danger" Size="Size.Small" @onclick="() => DeleteItem(item)">
+                        🗑️
+                    </Button>
+                </div>
+            </DisplayTemplate>
+        </DataGridColumn>
+    </DataGridColumns>
+</DataGrid>
+
+<!-- Модальное окно добавления/редактирования -->
+<Modal @ref="addModalRef">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>@(isEditing ? "Редактировать" : "Добавить") автора</ModalTitle>
+            <CloseButton @onclick="HideAddModal" />
+        </ModalHeader>
+        <ModalBody>
+            <Field>
+                <FieldLabel>ФИО автора</FieldLabel>
+                <TextEdit @bind-Text="currentAuthor.Name" />
+            </Field>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
+            <Button Color="Color.Primary" @onclick="SaveAuthor">Сохранить</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+    private Modal addModalRef = new Modal();
+    private List<OrderAuthor> authors = new();
+    private OrderAuthor currentAuthor = new();
+    private bool isEditing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAuthors();
+    }
+
+    private async Task LoadAuthors()
+    {
+        // Получаем уникальных авторов из заказов
+        authors = await OrderService.GetAllAuthors();
+        StateHasChanged();
+    }
+
+    private void ShowAddModal()
+    {
+        currentAuthor = new OrderAuthor();
+        isEditing = false;
+        addModalRef.Show();
+    }
+
+    private void HideAddModal()
+    {
+        addModalRef.Hide();
+    }
+
+    private async Task SaveAuthor()
+    {
+        if (string.IsNullOrWhiteSpace(currentAuthor.Name))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "ФИО автора не может быть пустым!");
+            return;
+        }
+
+        try
+        {
+            // Для демонстрации - в реальном приложении нужно реализовать методы в OrderService
+            if (isEditing)
+            {
+                await OrderService.UpdateAuthor(currentAuthor);
+            }
+            else
+            {
+                await OrderService.AddAuthor(currentAuthor);
+            }
+
+            await LoadAuthors();
+            addModalRef.Hide();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", ex.Message);
+        }
+
+    }
+
+    private void EditItem(OrderAuthor item)
+    {
+        currentAuthor = new OrderAuthor { ID = item.ID, Name = item.Name };
+        isEditing = true;
+        addModalRef.Show();
+    }
+
+    private async Task DeleteItem(OrderAuthor item)
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Удалить автора {item.Name}?");
+        if (!confirm) return;
+
+        try
+        {
+            await OrderService.DeleteAuthor(item.ID);
+            await LoadAuthors();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", ex.Message);
+        }
+
+
+    }
+}
