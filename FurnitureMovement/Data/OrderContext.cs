@@ -13,6 +13,7 @@ namespace FurnitureMovement.Data
         public DbSet<Furniture> Furnitures { get; set; }
         public DbSet<FurnitureName> FurnitureNames { get; set; }
         public DbSet<OrderAuthor> OrderAuthors { get; set; }
+        public DbSet<WarehouseItem> WarehouseItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -46,6 +47,7 @@ namespace FurnitureMovement.Data
             modelBuilder.Entity<Furniture>().ToTable("Furnitures");
             modelBuilder.Entity<FurnitureName>().ToTable("FurnitureNames");
             modelBuilder.Entity<OrderAuthor>().ToTable("OrderAuthors");
+            modelBuilder.Entity<WarehouseItem>().ToTable("WarehouseItems");
         }
     }
 }

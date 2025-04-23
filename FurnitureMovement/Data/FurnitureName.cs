@@ -12,5 +12,6 @@ namespace FurnitureMovement.Data
         [Required]
         [StringLength(50)]
         public string? Name { get; set; }  // Само название
+        public int DeleteIndicator { get; set; } = 0;
     }
 }

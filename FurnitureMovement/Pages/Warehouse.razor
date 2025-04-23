@@ -1,0 +1,91 @@
+﻿@page "/warehouse"
+@using FurnitureMovement.Data
+@using FurnitureMovement.Services
+@using Blazorise
+@using Blazorise.DataGrid
+@inject IOrderService OrderService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Склад оснастки</PageTitle>
+
+<h3>Учет оснастки на складе</h3>
+
+<DataGrid TItem="WarehouseItem"
+          Data="@warehouseItems"
+          ShowPager="true"
+          PageSize="10"
+@ref="dataGrid">
+    <DataGridColumns>
+        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.ID)" Caption="ID" />
+        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.FurnitureName)" Caption="Наименование оснастки" />
+        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.Quantity)" Caption="Количество" />
+        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.AdmissionDate)" Caption="Дата поступления">
+            <DisplayTemplate Context="item">
+                @item.AdmissionDate.ToString("dd/MM/yyyy")
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn TItem="WarehouseItem" Caption="Действия" Sortable="false">
+            <DisplayTemplate Context="item">
+                <Button Color="Color.Danger" Size="Size.Small" @onclick="() => RemoveFromWarehouse(item)">
+                    Списать
+                </Button>
+            </DisplayTemplate>
+        </DataGridColumn>
+    </DataGridColumns>
+</DataGrid>
+
+@code {
+    private DataGrid<WarehouseItem> dataGrid;
+    private List<WarehouseItem> warehouseItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWarehouseItems();
+    }
+
+    private async Task LoadWarehouseItems()
+    {
+        // Получаем все выполненные заказы
+        var completedOrders = await OrderService.GetCompletedOrders();
+
+        // Группируем оснастку по наименованию и суммируем количество
+        warehouseItems = completedOrders
+            .SelectMany(o => o.Furnitures.Select(f => new WarehouseItem
+                {
+                    FurnitureName = f.FurnitureName.Name,
+                    Quantity = f.OrderQuantity,
+                    AdmissionDate = o.AdmissionDate,
+                    FurnitureNameId = f.FurnitureNameID,
+                }))
+            .GroupBy(item => item.FurnitureNameId)
+            .Select(group => new WarehouseItem
+                {
+                    FurnitureName = group.First().FurnitureName,
+                    Quantity = group.Sum(x => x.Quantity),
+                    AdmissionDate = group.Max(x => x.AdmissionDate),
+                    FurnitureNameId = group.Key
+                })
+            .ToList();
+    }
+
+    private async Task RemoveFromWarehouse(WarehouseItem item)
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm",
+            $"Списать {item.Quantity} единиц оснастки '{item.FurnitureName}'?");
+
+        if (!confirm) return;
+
+        try
+        {
+            // Здесь можно добавить логику списания со склада
+            // Например, создать запись о списании в отдельной таблице
+
+            await JSRuntime.InvokeVoidAsync("alert", "Оснастка успешно списана");
+            await LoadWarehouseItems();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
+        }
+    }
+}

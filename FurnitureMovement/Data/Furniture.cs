@@ -13,17 +13,14 @@ namespace FurnitureMovement.Data
         public int ID { get; set; }
 
         [Required]
-        public int FurnitureNameID { get; set; } // Было OrderNameID
+        public int FurnitureNameID { get; set; }
 
         [ForeignKey("FurnitureNameID")]
-        public FurnitureName? FurnitureName { get; set; } // Было OrderName
+        public FurnitureName? FurnitureName { get; set; } 
 
         [Range(1, 99999)]
         public long OrderQuantity { get; set; }
-
-        // Внешний ключ для связи с Order
         public int OrderID { get; set; }
-        // Навигационное свойство
         public Order? Order { get; set; }
     }
 }
