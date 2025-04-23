@@ -14,7 +14,7 @@ namespace FurnitureMovement.Data
         [Description("Оформлен")]
         Decorated = 1,
 
-        [Description("ВПроцессеИзготовления")]
+        [Description("В Процессе Изготовления")]
         InThePreparationProcess = 2,
 
         [Description("Изготовлено")]
@@ -25,6 +25,21 @@ namespace FurnitureMovement.Data
 
         [Description("Отменен")]
         Cancelled = 5
+    }
+
+    public enum Priority : long
+    {
+        [Description("Обычный")]
+        Usual = 0,
+
+        [Description("Важный")]
+        Important = 1,
+
+        [Description("Быстрый")]
+        Fast = 2,
+
+        [Description("Срочный")]
+        Emergency = 3
     }
     public class Order
     {
@@ -44,13 +59,11 @@ namespace FurnitureMovement.Data
         [Required]
         [StringLength(50)]
         public OrderStatus OrderStatus { get; set; }
-        // Внешний ключ для связи с OrderAuthor
         public int OrderAuthorID { get; set; }
+        public int DeleteIndicator { get; set; } = 0;
 
-        // Навигационное свойство
         [ForeignKey("OrderAuthorID")]
         public OrderAuthor? OrderAuthor { get; set; }
-
         public List<Furniture>? Furnitures { get; set; }
     }
 }

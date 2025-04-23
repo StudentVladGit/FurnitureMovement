@@ -56,6 +56,9 @@ namespace FurnitureMovement.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
 
+                    b.Property<int>("DeleteIndicator")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -76,6 +79,9 @@ namespace FurnitureMovement.Migrations
 
                     b.Property<DateTime>("AdmissionDate")
                         .HasColumnType("date");
+
+                    b.Property<int>("DeleteIndicator")
+                        .HasColumnType("integer");
 
                     b.Property<int>("OrderAuthorID")
                         .HasColumnType("integer");
@@ -104,6 +110,9 @@ namespace FurnitureMovement.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
 
+                    b.Property<int>("DeleteIndicator")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -112,6 +121,32 @@ namespace FurnitureMovement.Migrations
                     b.HasKey("ID");
 
                     b.ToTable("OrderAuthors", (string)null);
+                });
+
+            modelBuilder.Entity("FurnitureMovement.Data.WarehouseItem", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("ID"));
+
+                    b.Property<DateTime>("AdmissionDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("FurnitureName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("FurnitureNameId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Quantity")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("WarehouseItems", (string)null);
                 });
 
             modelBuilder.Entity("FurnitureMovement.Data.Furniture", b =>

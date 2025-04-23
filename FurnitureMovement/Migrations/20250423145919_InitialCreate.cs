@@ -18,7 +18,8 @@ namespace FurnitureMovement.Migrations
                 {
                     ID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
-                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    DeleteIndicator = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -31,11 +32,28 @@ namespace FurnitureMovement.Migrations
                 {
                     ID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
-                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    DeleteIndicator = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OrderAuthors", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WarehouseItems",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                    FurnitureName = table.Column<string>(type: "text", nullable: false),
+                    FurnitureNameId = table.Column<int>(type: "integer", nullable: false),
+                    Quantity = table.Column<long>(type: "bigint", nullable: false),
+                    AdmissionDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WarehouseItems", x => x.ID);
                 });
 
             migrationBuilder.CreateTable(
@@ -47,7 +65,8 @@ namespace FurnitureMovement.Migrations
                     OrderNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     AdmissionDate = table.Column<DateTime>(type: "date", nullable: false),
                     OrderStatus = table.Column<long>(type: "bigint", maxLength: 50, nullable: false),
-                    OrderAuthorID = table.Column<int>(type: "integer", nullable: false)
+                    OrderAuthorID = table.Column<int>(type: "integer", nullable: false),
+                    DeleteIndicator = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -108,6 +127,9 @@ namespace FurnitureMovement.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Furnitures");
+
+            migrationBuilder.DropTable(
+                name: "WarehouseItems");
 
             migrationBuilder.DropTable(
                 name: "FurnitureNames");

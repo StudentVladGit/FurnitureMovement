@@ -1,4 +1,5 @@
-﻿using FurnitureMovement.Data;
+﻿using Blazorise;
+using FurnitureMovement.Data;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -25,6 +26,9 @@ public interface IOrderService
     Task AddAuthor(OrderAuthor author);
     Task UpdateAuthor(OrderAuthor author);
     Task DeleteAuthor(int id);
+
+    //Работа со складом
+    Task<List<Order>> GetCompletedOrders(); // Новый метод для получения выполненных заказов
 
 }
 
@@ -61,8 +65,8 @@ public class OrderService : IOrderService
     // Delete
     public async Task Delete(int id)
     {
-        using (var context = _myFactory.CreateDbContext())
-        {
+        using var context = _myFactory.CreateDbContext();
+        
             // Находим заказ вместе с связанными записями OrderFurniture
             var order = await context.Orders
                 .Include(o => o.Furnitures) // Загружаем связанные OrderFurnitures
@@ -76,21 +80,23 @@ public class OrderService : IOrderService
                     context.Furnitures.RemoveRange(order.Furnitures);
                 }
 
-                // Удаляем сам заказ
-                context.Orders.Remove(order);
+
+                order.DeleteIndicator = 1; //Установили 1, значит удалили
 
                 // Сохраняем изменения
                 await context.SaveChangesAsync();
             }
-        }
+        
     }
 
     //Read
     public async Task<List<Order>> GetAllOrders()
     {
         using var context = _myFactory.CreateDbContext();
+        
         return await context.Orders
-            .Include(o => o.OrderAuthor)  // Добавлена загрузка автора
+            .Where(o => o.DeleteIndicator == 0) //Возвращает только не удаленные заказы
+            .Include(o => o.OrderAuthor)
             .Include(o => o.Furnitures)
                 .ThenInclude(f => f.FurnitureName)
             .ToListAsync();
@@ -99,13 +105,17 @@ public class OrderService : IOrderService
     public async Task<List<FurnitureName>> GetAllOrderNames()
     {
         var context = _myFactory.CreateDbContext();
-        return await context.FurnitureNames.ToListAsync();
+        return await context.FurnitureNames
+            .Where(o => o.DeleteIndicator == 0)
+            .ToListAsync();
     }
 
     public async Task<List<OrderAuthor>> GetAllAuthors()
     {
         using var context = _myFactory.CreateDbContext();
-        return await context.OrderAuthors.ToListAsync();
+        return await context.OrderAuthors
+            .Where(o => o.DeleteIndicator == 0)
+            .ToListAsync();
     }
 
     // Update
@@ -196,11 +206,13 @@ public class OrderService : IOrderService
                 throw new ArgumentException("Оснастка не найдена");
 
             // Проверяем, нет ли заказов с этой оснасткой
-            var hasFurniture = await context.Furnitures.AnyAsync(od => od.FurnitureNameID == id);
+            var hasFurniture = await context.Furnitures
+                .Include(f => f.FurnitureName)
+                .AnyAsync(od => od.FurnitureNameID == id && od.FurnitureName.DeleteIndicator == 0);
             if (hasFurniture)
                 throw new InvalidOperationException("Нельзя удалить оснастку, так как существуют связанные заказы");
 
-            context.FurnitureNames.Remove(Furniture_Name);
+            Furniture_Name.DeleteIndicator = 1;
             await context.SaveChangesAsync();
         }
     }
@@ -250,12 +262,23 @@ public class OrderService : IOrderService
             if (author == null)
                 throw new ArgumentException("Автор не найден");
 
-            var hasAuthor = await context.Orders.AnyAsync(od => od.OrderAuthorID == id);
+            var hasAuthor = await context.Orders.AnyAsync(od => od.OrderAuthorID == id && od.DeleteIndicator == 0);
             if (hasAuthor)
                 throw new InvalidOperationException("Нельзя удалить автора, у которого есть заказы");
 
-            context.OrderAuthors.Remove(author);
+            author.DeleteIndicator = 1;
             await context.SaveChangesAsync();
         }
+    }
+
+    public async Task<List<Order>> GetCompletedOrders()
+    {
+        using var context = _myFactory.CreateDbContext();
+
+        return await context.Orders
+            .Where(o => o.OrderStatus == OrderStatus.Completed && o.DeleteIndicator == 0)
+            .Include(o => o.Furnitures)
+                .ThenInclude(f => f.FurnitureName)
+            .ToListAsync();
     }
 }
