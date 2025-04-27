@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20250423145919_InitialCreate")]
+    [Migration("20250427123926_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -93,6 +93,10 @@ namespace FurnitureMovement.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<long>("OrderPriority")
+                        .HasMaxLength(50)
+                        .HasColumnType("bigint");
 
                     b.Property<long>("OrderStatus")
                         .HasMaxLength(50)

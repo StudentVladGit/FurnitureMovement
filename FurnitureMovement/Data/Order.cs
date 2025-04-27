@@ -27,7 +27,7 @@ namespace FurnitureMovement.Data
         Cancelled = 5
     }
 
-    public enum Priority : long
+    public enum OrderPriority : long
     {
         [Description("Обычный")]
         Usual = 0,
@@ -59,7 +59,12 @@ namespace FurnitureMovement.Data
         [Required]
         [StringLength(50)]
         public OrderStatus OrderStatus { get; set; }
-        public int OrderAuthorID { get; set; }
+
+		[Required]
+		[StringLength(50)]
+		public OrderPriority OrderPriority { get; set; }
+
+		public int OrderAuthorID { get; set; }
         public int DeleteIndicator { get; set; } = 0;
 
         [ForeignKey("OrderAuthorID")]

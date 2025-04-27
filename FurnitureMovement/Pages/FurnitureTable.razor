@@ -21,12 +21,12 @@
         <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.ID)" Caption="ID" />
         <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.Name)" Caption="Наименование" />
         <DataGridColumn TItem="FurnitureName" Caption="Действия" Sortable="false">
-            <DisplayTemplate Context="item">
+            <DisplayTemplate Context="name">
                 <div class="d-flex justify-content-end gap-2">
-                    <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(item)">
+                    <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditName(name)">
                         ✏️
                     </Button>
-                    <Button Color="Color.Danger" Size="Size.Small" @onclick="() => DeleteItem(item)">
+                    <Button Color="Color.Danger" Size="Size.Small" @onclick="() => DeleteName(name)">
                         🗑️
                     </Button>
                 </div>
@@ -45,12 +45,12 @@
         <ModalBody>
             <Field>
                 <FieldLabel>Наименование оснастки</FieldLabel>
-                <TextEdit @bind-Text="currentOrderName.Name" />
+                <TextEdit @bind-Text="currentFurnitureName.Name" />
             </Field>
         </ModalBody>
         <ModalFooter>
             <Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
-            <Button Color="Color.Primary" @onclick="SaveOrderName">Сохранить</Button>
+            <Button Color="Color.Primary" @onclick="SaveFurnitureName">Сохранить</Button>
         </ModalFooter>
     </ModalContent>
 </Modal>
@@ -58,23 +58,23 @@
 @code {
     private Modal addModalRef = new Modal();
     private List<FurnitureName> FurnitureNames = new();
-    private FurnitureName currentOrderName = new();
+    private FurnitureName currentFurnitureName = new();
     private bool isEditing = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadOrderNames();
+        await LoadFurnitureNames();
     }
 
-    private async Task LoadOrderNames()
+    private async Task LoadFurnitureNames()
     {
-        FurnitureNames = await OrderService.GetAllOrderNames();
+        FurnitureNames = await OrderService.GetAllFurnitureNames();
         StateHasChanged();
     }
 
     private void ShowAddModal()
     {
-        currentOrderName = new FurnitureName();
+        currentFurnitureName = new FurnitureName();
         isEditing = false;
         addModalRef.Show();
     }
@@ -84,9 +84,9 @@
         addModalRef.Hide();
     }
 
-    private async Task SaveOrderName()
+    private async Task SaveFurnitureName()
     {
-        if (string.IsNullOrWhiteSpace(currentOrderName.Name))
+        if (string.IsNullOrWhiteSpace(currentFurnitureName.Name))
         {
             await JSRuntime.InvokeVoidAsync("alert", "Наименование не может быть пустым!");
             return;
@@ -96,14 +96,14 @@
         {
             if (isEditing)
             {
-                await OrderService.UpdateOrderName(currentOrderName);
+                await OrderService.UpdateFurnitureName(currentFurnitureName);
             }
             else
             {
-                await OrderService.AddOrderName(currentOrderName);
+                await OrderService.AddFurnitureName(currentFurnitureName);
             }
 
-            await LoadOrderNames();
+            await LoadFurnitureNames();
             addModalRef.Hide();
         }
         catch (Exception ex)
@@ -112,22 +112,22 @@
         }
     }
 
-    private void EditItem(FurnitureName item)
+    private void EditName(FurnitureName name)
     {
-        currentOrderName = new FurnitureName { ID = item.ID, Name = item.Name };
+        currentFurnitureName = new FurnitureName { ID = name.ID, Name = name.Name };
         isEditing = true;
         addModalRef.Show();
     }
 
-    private async Task DeleteItem(FurnitureName item)
+    private async Task DeleteName(FurnitureName name)
     {
-        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Удалить оснастку {item.Name}?");
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Удалить оснастку {name.Name}?");
         if (!confirm) return;
 
         try
         {
-            await OrderService.DeleteOrderName(item.ID);
-            await LoadOrderNames();
+            await OrderService.DeleteFurnitureName(name.ID);
+            await LoadFurnitureNames();
         }
         catch (Exception ex)
         {

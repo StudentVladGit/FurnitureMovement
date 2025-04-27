@@ -65,6 +65,7 @@ namespace FurnitureMovement.Migrations
                     OrderNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     AdmissionDate = table.Column<DateTime>(type: "date", nullable: false),
                     OrderStatus = table.Column<long>(type: "bigint", maxLength: 50, nullable: false),
+                    OrderPriority = table.Column<long>(type: "bigint", maxLength: 50, nullable: false),
                     OrderAuthorID = table.Column<int>(type: "integer", nullable: false),
                     DeleteIndicator = table.Column<int>(type: "integer", nullable: false)
                 },
