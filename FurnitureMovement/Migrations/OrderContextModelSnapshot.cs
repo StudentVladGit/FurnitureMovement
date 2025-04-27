@@ -91,6 +91,10 @@ namespace FurnitureMovement.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<long>("OrderPriority")
+                        .HasMaxLength(50)
+                        .HasColumnType("bigint");
+
                     b.Property<long>("OrderStatus")
                         .HasMaxLength(50)
                         .HasColumnType("bigint");
