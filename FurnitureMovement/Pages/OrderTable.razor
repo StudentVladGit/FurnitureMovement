@@ -16,502 +16,626 @@
 
 @if (orders == null)
 {
-	<p>Загрузка данных...</p>
+    <p>Загрузка данных...</p>
 }
 else
 {
-	<!-- ТАБЛИЦА ЗАКАЗА ОСНАСТКИ -->
-	<DataGrid TItem="Order"
-			  Data="@orders"
-			  ShowPager="true">
-		<DataGridColumns>
-			<DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
+    <!-- ТАБЛИЦА ЗАКАЗА ОСНАСТКИ -->
+    <DataGrid TItem="Order"
+              Data="@orders"
+              ShowPager="true">
+        <DataGridColumns>
+            <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
 
-			<DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер" />
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер">
+                <DisplayTemplate Context="order">
+                    <a href="javascript:void(0)" @onclick="() => ShowFurnituresModal(order)">@order.OrderNumber</a>
+                </DisplayTemplate>
+            </DataGridColumn>
 
-			<DataGridColumn TItem="Order" Caption="Наименование">
-				<DisplayTemplate Context="furniture">
-					@(furniture.Furnitures?.FirstOrDefault()?.FurnitureName?.Name ?? "Не указано")
-				</DisplayTemplate>
-			</DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Статус">
+                <DisplayTemplate Context="order">
+                    @order.OrderStatus.GetDescription()
+                </DisplayTemplate>
+            </DataGridColumn>
 
-			<DataGridColumn TItem="Order" Caption="Количество">
-				<DisplayTemplate Context="furniture">
-					@(furniture.Furnitures?.FirstOrDefault()?.OrderQuantity.ToString() ?? "0")
-				</DisplayTemplate>
-			</DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Приоритет">
+                <DisplayTemplate Context="order">
+                    @order.OrderPriority.GetDescription()
+                </DisplayTemplate>
+            </DataGridColumn>
 
-			<DataGridColumn TItem="Order" Caption="Статус">
-				<DisplayTemplate Context="order">
-					@order.OrderStatus.GetDescription()
-				</DisplayTemplate>
-			</DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Дата">
+                <DisplayTemplate Context="order">
+                    @(order.AdmissionDate.ToString("dd/MM/yyyy"))
+                </DisplayTemplate>
+            </DataGridColumn>
 
-			<DataGridColumn TItem="Order" Caption="Приоритет">
-				<DisplayTemplate Context="order">
-					@order.OrderPriority.GetDescription()
-				</DisplayTemplate>
-			</DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Автор">
+                <DisplayTemplate Context="order">
+                    @(order.OrderAuthor?.Name ?? "Не указан")
+                </DisplayTemplate>
+            </DataGridColumn>
 
-			<DataGridColumn TItem="Order" Caption="Дата">
-				<DisplayTemplate Context="order">
-					@(order.AdmissionDate.ToString("dd/MM/yyyy"))
-				</DisplayTemplate>
-			</DataGridColumn>
-
-			<DataGridColumn TItem="Order" Caption="Автор">
-				<DisplayTemplate Context="order">
-					@(order.OrderAuthor?.Name ?? "Не указан")
-				</DisplayTemplate>
-			</DataGridColumn>
-
-			<DataGridColumn TItem="Order" Caption="Действия" Sortable="false">
-				<DisplayTemplate Context="order">
-					<Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditOrder(order)">
-						✏️
-					</Button>
-					<Button Color="Color.Danger" Size="Size.Small" class="ml-3" @onclick="() => DeleteOrder(order)">
-						🗑️
-					</Button>
-				</DisplayTemplate>
-			</DataGridColumn>
-
-		</DataGridColumns>
-	</DataGrid>
-	<!-- ТАБЛИЦА ЗАКАЗА ОСНАСТКИ -->
+            <DataGridColumn TItem="Order" Caption="Действия" Sortable="false">
+                <DisplayTemplate Context="order">
+                    <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditOrder(order)">
+                        ✏️
+                    </Button>
+                    <Button Color="Color.Danger" Size="Size.Small" class="ml-3" @onclick="() => DeleteOrder(order)">
+                        🗑️
+                    </Button>
+                </DisplayTemplate>
+            </DataGridColumn>
+        </DataGridColumns>
+    </DataGrid>
+    <!-- ТАБЛИЦА ЗАКАЗА ОСНАСТКИ -->
 }
 
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ОТОБРАЖЕНИЯ ПОЗИЦИЙ ОСНАСТКИ -->
+<Modal @ref="furnituresModalRef">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Позиции заказа @currentOrder?.OrderNumber</ModalTitle>
+            <CloseButton @onclick="HideFurnituresModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (currentOrder?.Furnitures != null && currentOrder.Furnitures.Any())
+            {
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Наименование</th>
+                            <th>Количество</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var furniture in currentOrder.Furnitures)
+                        {
+                            <tr>
+                                <td>@(furniture.FurnitureName?.Name ?? "Не указано")</td>
+                                <td>@furniture.OrderQuantity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>Нет позиций для отображения.</p>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideFurnituresModal">Закрыть</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ОТОБРАЖЕНИЯ ПОЗИЦИЙ ОСНАСТКИ -->
 <!-- МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
 <Modal @ref="addModalRef">
-	<ModalContent>
-		<ModalHeader>
-			<ModalTitle>Добавить новый заказ</ModalTitle>
-			<CloseButton @onclick="HideAddModal" />
-		</ModalHeader>
-		<ModalBody>
-			<!-- ПОЛЯ ДЛЯ ВВОДА ДАННЫХ -->
-			<Field>
-				<FieldLabel>Номер заказа</FieldLabel>
-				<TextEdit @bind-Text="newOrder.OrderNumber" />
-			</Field>
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Добавить новый заказ</ModalTitle>
+            <CloseButton @onclick="HideAddModal" />
+        </ModalHeader>
+        <ModalBody>
+            <!-- ПОЛЯ ДЛЯ ВВОДА ДАННЫХ -->
+            <Field>
+                <FieldLabel>Номер заказа</FieldLabel>
+                <TextEdit @bind-Text="newOrder.OrderNumber" />
+            </Field>
 
-			<Field>
-				<FieldLabel>Наименование</FieldLabel>
-				<Select TValue="int" @bind-SelectedValue="newFurniture.FurnitureNameID">
-					<SelectItem TValue="int" Value="0" Disabled Hidden>Выберите наименование</SelectItem>
-					@if (FurnitureNames != null)
-					{
-						@foreach (var name in FurnitureNames)
-						{
-							<SelectItem TValue="int" Value="@name.ID">@name.Name</SelectItem>
-						}
-					}
-				</Select>
-				@if (newFurniture.FurnitureNameID <= 0)
-				{
-					<FieldHelp Style="color: red;">Необходимо выбрать наименование</FieldHelp>
-				}
-			</Field>
+            <!-- СПИСОК ОСНАСТКИ -->
+            <Field>
+                <FieldLabel>Оснастка</FieldLabel>
+                @if (newFurnitures.Any())
+                {
+                    @foreach (var furniture in newFurnitures)
+                    {
+                        var localFurniture = furniture;
+                        <div class="mb-3 p-3 border rounded">
+                            <Field>
+                                <FieldLabel>Наименование</FieldLabel>
+                                <Select TValue="int" @bind-SelectedValue="localFurniture.FurnitureNameID">
+                                    <SelectItem TValue="int" Value="0" Disabled Hidden>Выберите наименование</SelectItem>
+                                 @if (FurnitureNames != null)
+                                    {
+                                        @foreach (var name in FurnitureNames)
+                                        {
+                                            <SelectItem TValue="int" Value="@name.ID">@name.Name</SelectItem>
+                                        }
+                                    }
+                                </Select>
+                                @if (localFurniture.FurnitureNameID <= 0)
+                                {
+                                    <FieldHelp Style="color: red;">Необходимо выбрать наименование</FieldHelp>
+                                }
+                            </Field>
 
-			<Field>
-				<FieldLabel>Количество</FieldLabel>
-				<NumericEdit TValue="long" @bind-Value="newFurniture.OrderQuantity" />
-			</Field>
+                            <Field>
+                                <FieldLabel>Количество</FieldLabel>
+                                <NumericEdit TValue="long" @bind-Value="localFurniture.OrderQuantity" />
+                            </Field>
 
-			<Field>
-				<FieldLabel>Статус</FieldLabel>
-				<Select TValue="OrderStatus" @bind-SelectedValue="newOrder.OrderStatus">
-					@foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
-					{
-						<SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
-					}
-				</Select>
-			</Field>
+                            <Button Color="Color.Danger" Size="Size.Small" @onclick="() => RemoveFurniture(localFurniture)">Удалить</Button>
+                        </div>
+                    }
+                }
+                <Button Color="Color.Success" Size="Size.Small" @onclick="AddNewFurniture">Добавить оснастку</Button>
+            </Field>
 
-			<Field>
-				<FieldLabel>Приоритет</FieldLabel>
-				<Select TValue="OrderPriority" @bind-SelectedValue="newOrder.OrderPriority">
-					@foreach (OrderPriority priority in Enum.GetValues(typeof(OrderPriority)))
-					{
-						<SelectItem TValue="OrderPriority" Value="@priority">@priority.GetDescription()</SelectItem>
-					}
-				</Select>
-			</Field>
+            <Field>
+                <FieldLabel>Статус</FieldLabel>
+                <Select TValue="OrderStatus" @bind-SelectedValue="newOrder.OrderStatus">
+                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                    {
+                        <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
+                    }
+                </Select>
+            </Field>
 
-			<Field>
-				<FieldLabel>Дата</FieldLabel>
-				<DateEdit @bind-Date="newOrder.AdmissionDate" />
-			</Field>
+            <Field>
+                <FieldLabel>Приоритет</FieldLabel>
+                <Select TValue="OrderPriority" @bind-SelectedValue="newOrder.OrderPriority">
+                    @foreach (OrderPriority priority in Enum.GetValues(typeof(OrderPriority)))
+                    {
+                        <SelectItem TValue="OrderPriority" Value="@priority">@priority.GetDescription()</SelectItem>
+                    }
+                </Select>
+            </Field>
 
-			<Field>
-				<FieldLabel>Автор</FieldLabel>
-				<Select TValue="int" @bind-SelectedValue="newOrder.OrderAuthorID">
-					<SelectItem TValue="int" Value="0" Disabled Hidden>Выберите автора</SelectItem>
-					@if (authors != null)
-					{
-						@foreach (var author in authors)
-						{
-							<SelectItem TValue="int" Value="@author.ID">@author.Name</SelectItem>
-						}
-					}
-				</Select>
-				@if (newOrder.OrderAuthorID <= 0)
-				{
-					<FieldHelp Style="color: red;">Необходимо выбрать автора</FieldHelp>
-				}
-			</Field>
+            <Field>
+                <FieldLabel>Дата</FieldLabel>
+                <DateEdit @bind-Date="newOrder.AdmissionDate" />
+            </Field>
 
-		</ModalBody>
-		<ModalFooter>
-			<Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
-			<Button Color="Color.Primary" @onclick="SaveOrder">Сохранить</Button>
-		</ModalFooter>
-	</ModalContent>
+            <Field>
+                <FieldLabel>Автор</FieldLabel>
+                <Select TValue="int" @bind-SelectedValue="newOrder.OrderAuthorID">
+                    <SelectItem TValue="int" Value="0" Disabled Hidden>Выберите автора</SelectItem>
+                    @if (authors != null)
+                    {
+                        @foreach (var author in authors)
+                        {
+                            <SelectItem TValue="int" Value="@author.ID">@author.Name</SelectItem>
+                        }
+                    }
+                </Select>
+                @if (newOrder.OrderAuthorID <= 0)
+                {
+                    <FieldHelp Style="color: red;">Необходимо выбрать автора</FieldHelp>
+                }
+            </Field>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
+            <Button Color="Color.Primary" @onclick="SaveOrder">Сохранить</Button>
+        </ModalFooter>
+    </ModalContent>
 </Modal>
 <!-- МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
 <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
 <Modal @ref="editModalRef">
-	<ModalContent>
-		<ModalHeader>
-			<ModalTitle>Редактировать заказ</ModalTitle>
-			<CloseButton @onclick="() => editModalRef.Hide()" />
-		</ModalHeader>
-		<ModalBody>
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Редактировать заказ</ModalTitle>
+            <CloseButton @onclick="() => editModalRef.Hide()" />
+        </ModalHeader>
+        <ModalBody>
+            <Field>
+                <FieldLabel>Номер заказа</FieldLabel>
+                <TextEdit @bind-Text="selectedOrder.OrderNumber" />
+            </Field>
 
-			<Field>
-				<FieldLabel>Номер заказа</FieldLabel>
-				<TextEdit @bind-Text="selectedOrder.OrderNumber" />
-			</Field>
+            <!-- СПИСОК ОСНАСТКИ -->
+            <Field>
+                <FieldLabel>Оснастка</FieldLabel>
+                @if (selectedFurnitures.Any())
+                {
+                    @foreach (var furniture in selectedFurnitures)
+                    {
+                        var localFurniture = furniture;
+                        <div class="mb-3 p-3 border rounded">
+                            <Field>
+                                <FieldLabel>Наименование</FieldLabel>
+                                <Select TValue="int" @bind-SelectedValue="localFurniture.FurnitureNameID">
+                                    <SelectItem TValue="int" Value="0" Disabled Hidden>Выберите наименование</SelectItem>
+                                 @if (FurnitureNames != null)
+                                    {
+                                        @foreach (var name in FurnitureNames)
+                                        {
+                                            <SelectItem TValue="int" Value="@name.ID">@name.Name</SelectItem>
+                                        }
+                                    }
+                                </Select>
+                                @if (localFurniture.FurnitureNameID <= 0)
+                                {
+                                    <FieldHelp Style="color: red;">Необходимо выбрать наименование</FieldHelp>
+                                }
+                            </Field>
 
-			<Field>
-				<FieldLabel>Наименование</FieldLabel>
-				<Select TValue="int" @bind-SelectedValue="selectedFurniture.FurnitureNameID">
-					@foreach (var name in FurnitureNames)
-					{
-						<SelectItem TValue="int" Value="@name.ID">@name.Name</SelectItem>
-					}
-				</Select>
-			</Field>
+                            <Field>
+                                <FieldLabel>Количество</FieldLabel>
+                                <NumericEdit TValue="long" @bind-Value="localFurniture.OrderQuantity" />
+                            </Field>
 
-			<Field>
-				<FieldLabel>Количество</FieldLabel>
-				<NumericEdit TValue="long" @bind-Value="selectedFurniture.OrderQuantity" />
-			</Field>
+                            <Button Color="Color.Danger" Size="Size.Small" @onclick="() => RemoveSelectedFurniture(localFurniture)">Удалить</Button>
+                        </div>
+                    }
+                }
+                <Button Color="Color.Success" Size="Size.Small" @onclick="AddNewSelectedFurniture">Добавить оснастку</Button>
+            </Field>
 
-			<Field>
-				<FieldLabel>Статус</FieldLabel>
-				<Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus">
-					@foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
-					{
-						<SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
-					}
-				</Select>
-			</Field>
+            <Field>
+                <FieldLabel>Статус</FieldLabel>
+                <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus">
+                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                    {
+                        <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
+                    }
+                </Select>
+            </Field>
 
-			<Field>
-				<FieldLabel>Приоритет</FieldLabel>
-				<Select TValue="OrderPriority" @bind-SelectedValue="selectedOrder.OrderPriority">
-					@foreach (OrderPriority priority in Enum.GetValues(typeof(OrderPriority)))
-					{
-						<SelectItem TValue="OrderPriority" Value="@priority">@priority.GetDescription()</SelectItem>
-					}
-				</Select>
-			</Field>
+            <Field>
+                <FieldLabel>Приоритет</FieldLabel>
+                <Select TValue="OrderPriority" @bind-SelectedValue="selectedOrder.OrderPriority">
+                    @foreach (OrderPriority priority in Enum.GetValues(typeof(OrderPriority)))
+                    {
+                        <SelectItem TValue="OrderPriority" Value="@priority">@priority.GetDescription()</SelectItem>
+                    }
+                </Select>
+            </Field>
 
-			<Field>
-				<FieldLabel>Дата</FieldLabel>
-				<DateEdit @bind-Date="selectedOrder.AdmissionDate" />
-			</Field>
+            <Field>
+                <FieldLabel>Дата</FieldLabel>
+                <DateEdit @bind-Date="selectedOrder.AdmissionDate" />
+            </Field>
 
-			<Field>
-				<FieldLabel>Автор</FieldLabel>
-				<Select TValue="int" @bind-SelectedValue="selectedOrder.OrderAuthorID">
-					@foreach (var author in authors)
-					{
-						<SelectItem TValue="int" Value="@author.ID">@author.Name</SelectItem>
-					}
-				</Select>
-			</Field>
-
-		</ModalBody>
-		<ModalFooter>
-			<Button Color="Color.Secondary" @onclick="() => editModalRef.Hide()">Отмена</Button>
-			<Button Color="Color.Primary" @onclick="UpdateOrder">Сохранить</Button>
-		</ModalFooter>
-	</ModalContent>
+            <Field>
+                <FieldLabel>Автор</FieldLabel>
+                <Select TValue="int" @bind-SelectedValue="selectedOrder.OrderAuthorID">
+                    @foreach (var author in authors)
+                    {
+                        <SelectItem TValue="int" Value="@author.ID">@author.Name</SelectItem>
+                    }
+                </Select>
+            </Field>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="() => editModalRef.Hide()">Отмена</Button>
+            <Button Color="Color.Primary" @onclick="UpdateOrder">Сохранить</Button>
+        </ModalFooter>
+    </ModalContent>
 </Modal>
 <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
 <!-- МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ -->
 <Modal @ref="deleteModalRef">
-	<ModalContent>
-		<ModalHeader>
-			<ModalTitle>Удаление заказа</ModalTitle>
-			<CloseButton @onclick="() => deleteModalRef.Hide()" />
-		</ModalHeader>
-		<ModalBody>
-			<p>Вы уверены, что хотите удалить этот заказ?</p>
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Удаление заказа</ModalTitle>
+            <CloseButton @onclick="() => deleteModalRef.Hide()" />
+        </ModalHeader>
+        <ModalBody>
+            <p>Вы уверены, что хотите удалить этот заказ?</p>
 
-			<Field>
-				<FieldLabel>Номер заказа</FieldLabel>
-				<TextEdit @bind-Text="selectedOrder.OrderNumber" ReadOnly />
-				</Field>
+            <Field>
+                <FieldLabel>Номер заказа</FieldLabel>
+                <TextEdit @bind-Text="selectedOrder.OrderNumber" ReadOnly />
+             </Field>
 
-				<Field>
-					<FieldLabel>Наименование</FieldLabel>
-					<TextEdit Text="@GetFurnitureName(selectedFurniture.FurnitureNameID)" ReadOnly />
-				</Field>
+             @* <Field>
+                 <FieldLabel>Наименование</FieldLabel>
+                 <TextEdit Text="@GetFurnitureName(selectedFurniture.FurnitureNameID)" ReadOnly />
+             </Field>
 
-				<Field>
-					<FieldLabel>Количество</FieldLabel>
-					<NumericEdit TValue="long" @bind-Value="selectedFurniture.OrderQuantity" ReadOnly />
-				</Field>
+             <Field>
+                 <FieldLabel>Количество</FieldLabel>
+                 <NumericEdit TValue="long" @bind-Value="selectedFurniture.OrderQuantity" ReadOnly />
+             </Field> *@
 
-				<Field>
-					<FieldLabel>Статус</FieldLabel>
-					<Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus" Disabled>
-					@foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
-					{
-						<SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
-					}
-				</Select>
-			</Field>
+             <Field>
+                 <FieldLabel>Статус</FieldLabel>
+                 <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus" Disabled>
+                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                    {
+                        <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
+                    }
+                </Select>
+            </Field>
 
-			<Field>
-				<FieldLabel>Приоритет</FieldLabel>
-				<Select TValue="OrderPriority" @bind-SelectedValue="selectedOrder.OrderPriority" Disabled>
-					@foreach (OrderPriority priority in Enum.GetValues(typeof(OrderPriority)))
-					{
-						<SelectItem TValue="OrderPriority" Value="@priority">@priority.GetDescription()</SelectItem>
-					}
-				</Select>
-			</Field>
+            <Field>
+                <FieldLabel>Приоритет</FieldLabel>
+                <Select TValue="OrderPriority" @bind-SelectedValue="selectedOrder.OrderPriority" Disabled>
+                    @foreach (OrderPriority priority in Enum.GetValues(typeof(OrderPriority)))
+                    {
+                        <SelectItem TValue="OrderPriority" Value="@priority">@priority.GetDescription()</SelectItem>
+                    }
+                </Select>
+            </Field>
 
-			<Field>
-				<FieldLabel>Дата</FieldLabel>
-				<DateEdit @bind-Date="selectedOrder.AdmissionDate" ReadOnly />
-				</Field>
+            <Field>
+                <FieldLabel>Дата</FieldLabel>
+                <DateEdit @bind-Date="selectedOrder.AdmissionDate" ReadOnly />
+             </Field>
 
-				<Field>
-					<FieldLabel>Автор</FieldLabel>
-					<TextEdit Text="@(selectedOrder.OrderAuthor?.Name ?? "Не указан")" ReadOnly />
-				</Field>
+             <Field>
+                 <FieldLabel>Автор</FieldLabel>
+                 <TextEdit Text="@(selectedOrder.OrderAuthor?.Name ?? "Не указан")" ReadOnly />
+             </Field>
+         </ModalBody>
+         <ModalFooter>
+             <Button Color="Color.Secondary" @onclick="() => deleteModalRef.Hide()">Отмена</Button>
+             <Button Color="Color.Danger" @onclick="ConfirmDelete">Удалить</Button>
+         </ModalFooter>
+     </ModalContent>
+ </Modal>
+ <!-- МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ -->
+ <!-- КОД -->
+ @code {
+    private Modal addModalRef = new Modal();
+    private Modal editModalRef = new Modal();
+    private Modal deleteModalRef = new Modal();
+    private Modal furnituresModalRef = new Modal(); // Новое модальное окно для позиций оснастки
 
-			</ModalBody>
-			<ModalFooter>
-				<Button Color="Color.Secondary" @onclick="() => deleteModalRef.Hide()">Отмена</Button>
-				<Button Color="Color.Danger" @onclick="ConfirmDelete">Удалить</Button>
-			</ModalFooter>
-		</ModalContent>
-	</Modal>
-	<!-- МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ -->
-	<!-- КОД -->
-	@code {
-	private Modal addModalRef = new Modal();
-	private Modal editModalRef = new Modal();
-	private Modal deleteModalRef = new Modal();
+    private List<Order> orders = new();
+    private List<FurnitureName> FurnitureNames = new();
+    private List<OrderAuthor> authors = new();
 
-	private List<Order> orders = new();
-	private List<FurnitureName> FurnitureNames = new();
-	private List<OrderAuthor> authors = new();
+    private Order newOrder = new()
+        {
+            OrderStatus = OrderStatus.Generated,
+            OrderPriority = OrderPriority.Usual,
+            AdmissionDate = DateTime.Today
+        };
+    private List<Furniture> newFurnitures = new();
 
-	private Order newOrder = new()
-		{
-			OrderStatus = OrderStatus.Generated,
-			OrderPriority = OrderPriority.Usual,
-			AdmissionDate = DateTime.Today
-		};
-	private Furniture newFurniture = new()
-		{
-			OrderQuantity = 1
-		};
+    private Order selectedOrder = new();
+    private Furniture selectedFurniture = new();
+    private List<Furniture> selectedFurnitures = new();
 
-	private Order selectedOrder = new();
-	private Furniture selectedFurniture = new();
+    private Order currentOrder; // Для хранения текущего заказа в модальном окне позиций
 
+    <!-- ИНИЦИАЛИЗАЦИЯ -->
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh();
+        FurnitureNames = await OrderService.GetAllFurnitureNames();
+        authors = await OrderService.GetAllAuthors();
+    }
+    <!-- ИНИЦИАЛИЗАЦИЯ -->
+    <!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО С ПОЗИЦИЯМИ ОСНАСТКИ -->
+    private void ShowFurnituresModal(Order order)
+    {
+        currentOrder = order;
+        furnituresModalRef.Show();
+    }
 
+    <!-- ЗАКРЫТЬ МОДАЛЬНОЕ ОКНО С ПОЗИЦИЯМИ ОСНАСТКИ -->
+    private void HideFurnituresModal()
+    {
+        furnituresModalRef.Hide();
+        currentOrder = null;
+    }
 
+    <!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
+    private void ShowAddModal()
+    {
+        newFurnitures = new List<Furniture>();
+        AddNewFurniture();
 
-	<!-- ИНИЦИАЛИЗАЦИЯ -->
-	protected override async Task OnInitializedAsync()
-	{
-		await Refresh();
-		FurnitureNames = await OrderService.GetAllFurnitureNames();
-		authors = await OrderService.GetAllAuthors();
-	}
-	<!-- ИНИЦИАЛИЗАЦИЯ -->
-	<!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
-	private void ShowAddModal()
-	{
-		newFurniture = new Furniture
-		{
-			FurnitureNameID = 0, // Сбрасываем выбор при открытии
-			OrderQuantity = 1
-		};
+        newOrder = new Order
+            {
+                OrderStatus = OrderStatus.Generated,
+                OrderPriority = OrderPriority.Usual,
+                AdmissionDate = DateTime.Today
+            };
 
-		newOrder = new Order
-		{
-			OrderStatus = OrderStatus.Generated,
-			OrderPriority = OrderPriority.Usual,
-			AdmissionDate = DateTime.Today
-		};
+        addModalRef.Show();
+    }
+    <!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
+    <!-- ЗАКРЫТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
+    private void HideAddModal()
+    {
+        addModalRef.Hide();
+    }
+    <!-- ЗАКРЫТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
+    <!-- ДОБАВИТЬ НОВУЮ ОСНАСТКУ -->
+    private void AddNewFurniture()
+    {
+        newFurnitures.Add(new Furniture
+            {
+                FurnitureNameID = 0,
+                OrderQuantity = 1
+            });
+    }
 
-		addModalRef.Show();
-	}
-	<!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
-	<!-- ЗАКРЫТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
-	private void HideAddModal()
-	{
-		addModalRef.Hide();
-	}
-	<!-- ЗАКРЫТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
-	<!-- РЕДАКТИРОВАТЬ ЗАКАЗ -->
-	private void EditOrder(Order order)
-	{
-		selectedOrder = new Order
-			{
-				ID = order.ID,
-				OrderNumber = order.OrderNumber,
-				OrderStatus = order.OrderStatus,
-				OrderPriority = order.OrderPriority,
-				AdmissionDate = order.AdmissionDate,
-				OrderAuthorID = order.OrderAuthorID,
-				OrderAuthor = order.OrderAuthor
-			};
+    <!-- УДАЛИТЬ ОСНАСТКУ -->
+    private void RemoveFurniture(Furniture furniture)
+    {
+        newFurnitures.Remove(furniture);
+    }
 
-		var originalFurniture = order.Furnitures?.FirstOrDefault();
-		selectedFurniture = new Furniture
-			{
-				ID = originalFurniture?.ID ?? 0,
-				OrderQuantity = originalFurniture?.OrderQuantity ?? 1,
-				FurnitureNameID = originalFurniture?.FurnitureNameID ?? 0,
-				FurnitureName = originalFurniture?.FurnitureName
-			};
+    <!-- ДОБАВИТЬ НОВУЮ ОСНАСТКУ ДЛЯ РЕДАКТИРОВАНИЯ -->
+    private void AddNewSelectedFurniture()
+    {
+        selectedFurnitures.Add(new Furniture
+            {
+                FurnitureNameID = 0,
+                OrderQuantity = 1
+            });
+    }
 
-		editModalRef.Show();
-	}
-	<!-- РЕДАКТИРОВАТЬ ЗАКАЗ -->
-	<!-- СОХРАНИТЬ ЗАКАЗ -->
-	private async Task SaveOrder()
-	{
-		if (newFurniture.FurnitureNameID <= 0)
-		{
-			await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите наименование!");
-			return;
-		}
+    <!-- УДАЛИТЬ ОСНАСТКУ ПРИ РЕДАКТИРОВАНИИ -->
+    private void RemoveSelectedFurniture(Furniture furniture)
+    {
+        selectedFurnitures.Remove(furniture);
+    }
 
-		<!-- ПОТОМ МОЖНО УДАЛИТЬ ДАННЫЙ КУСОК КОДА -->
-		// Проверяем, что OrderNameID существует
-		if (!FurnitureNames.Any(x => x.ID == newFurniture.FurnitureNameID))
-		{
-			await JSRuntime.InvokeVoidAsync("alert",
-				$"Наименование с ID {newFurniture.FurnitureNameID} не существует!");
-			return;
-		}
+    <!-- РЕДАКТИРОВАТЬ ЗАКАЗ -->
+    private void EditOrder(Order order)
+    {
+        selectedOrder = new Order
+            {
+                ID = order.ID,
+                OrderNumber = order.OrderNumber,
+                OrderStatus = order.OrderStatus,
+                OrderPriority = order.OrderPriority,
+                AdmissionDate = order.AdmissionDate,
+                OrderAuthorID = order.OrderAuthorID,
+                OrderAuthor = order.OrderAuthor
+            };
 
-		try
-		{
-			newOrder.Furnitures = new List<Furniture> { newFurniture };
-			newFurniture.Order = newOrder;
+        selectedFurnitures = new List<Furniture>();
+        if (order.Furnitures?.Any() == true)
+        {
+            foreach (var furniture in order.Furnitures)
+            {
+                selectedFurnitures.Add(new Furniture
+                    {
+                        ID = furniture.ID,
+                        OrderQuantity = furniture.OrderQuantity,
+                        FurnitureNameID = furniture.FurnitureNameID,
+                        FurnitureName = null
+                    });
+            }
+        }
+        else
+        {
+            AddNewSelectedFurniture();
+        }
 
-			await OrderService.CreateOrder(newOrder, newFurniture);
-			await Refresh();
-			await addModalRef.Hide();
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine($"Ошибка при сохранении: {ex.Message}");
-			await JSRuntime.InvokeVoidAsync("alert", "Ошибка при сохранении!");
-		}
-	}
-	<!-- СОХРАНИТЬ ЗАКАЗ -->
-	<!-- ОБНОВИТЬ ЗАКАЗ -->
-	private async Task UpdateOrder()
-	{
-		if (selectedOrder != null && selectedFurniture != null)
-		{
-			try
-			{
-				// Обновляем основные свойства заказа
-				selectedOrder.Furnitures = new List<Furniture> { selectedFurniture };
+        editModalRef.Show();
+    }
+    <!-- РЕДАКТИРОВАТЬ ЗАКАЗ -->
+    <!-- СОХРАНИТЬ ЗАКАЗ -->
+    private async Task SaveOrder()
+    {
+        if (newFurnitures.Any(f => f.FurnitureNameID <= 0))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите наименование для всех позиций оснастки!");
+            return;
+        }
 
-				await OrderService.UpdateOrder(selectedOrder);
-				await editModalRef.Hide();
-				await Refresh();
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Ошибка при обновлении: {ex.Message}");
-				await JSRuntime.InvokeVoidAsync("alert", "Ошибка при обновлении!");
-			}
-		}
-	}
-	<!-- ОБНОВИТЬ ЗАКАЗ -->
-	<!-- УДАЛИТЬ ЗАКАЗ -->
-	private void DeleteOrder(Order order)
-	{
-		// Создаем копию заказа
-		selectedOrder = new Order
-			{
-				ID = order.ID,
-				OrderNumber = order.OrderNumber,
-				OrderStatus = order.OrderStatus,
-				OrderPriority = order.OrderPriority,
-				AdmissionDate = order.AdmissionDate,
-				OrderAuthor = order.OrderAuthor,
-				Furnitures = order.Furnitures?.ToList() ?? new List<Furniture>()
-			};
+        if (newOrder.OrderAuthorID <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите автора!");
+            return;
+        }
 
-		// Копируем данные оснастки
-		if (order.Furnitures?.Any() == true)
-		{
-			var originalFurniture = order.Furnitures.First();
-			selectedFurniture = new Furniture
-				{
-					ID = originalFurniture.ID,
-					OrderQuantity = originalFurniture.OrderQuantity,
-					FurnitureNameID = originalFurniture.FurnitureNameID,
-					FurnitureName = originalFurniture.FurnitureName
-				};
-			selectedOrder.Furnitures.Add(selectedFurniture);
-		}
-		else
-		{
-			selectedFurniture = new Furniture();
-		}
+        try
+        {
+            newOrder.Furnitures = newFurnitures;
+            foreach (var furniture in newOrder.Furnitures)
+            {
+                furniture.Order = newOrder;
+                furniture.FurnitureName = null;
+            }
 
-		deleteModalRef.Show();
-	}
-	<!-- УДАЛИТЬ ЗАКАЗ -->
-	<!-- ПОДТВЕРДИТЬ УДАЛЕНИЕ ЗАКАЗА -->
-	private async Task ConfirmDelete()
-	{
-		if (selectedOrder != null)
-		{
-			await OrderService.DeleteOrder(selectedOrder.ID);
-			await Refresh();
-			await deleteModalRef.Hide();
-		}
-	}
-	<!-- ПОДТВЕРДИТЬ УДАЛЕНИЕ ЗАКАЗА -->
-	<!-- ОБНОВИТЬ ДАННЫЕ-->
-	private async Task Refresh()
-	{
-		orders = new List<Order>();
-		StateHasChanged();
+            await OrderService.CreateOrder(newOrder, newFurnitures);
+            await Refresh();
+            await addModalRef.Hide();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при сохранении: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", "Ошибка при сохранении!");
+        }
+    }
+    <!-- СОХРАНИТЬ ЗАКАЗ -->
+    <!-- ОБНОВИТЬ ЗАКАЗ -->
+    private async Task UpdateOrder()
+    {
+        if (selectedOrder != null)
+        {
+            if (selectedFurnitures.Any(f => f.FurnitureNameID <= 0))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите наименование для всех позиций оснастки!");
+                return;
+            }
 
-		orders = await OrderService.GetAllOrders();
-		StateHasChanged();
-	}
-	<!-- ОБНОВИТЬ ДАННЫЕ-->
-	<!-- ПОЛУЧИТЬ НАИМЕНОВАНИЕ ОСНАСТКИ -->
-	private string GetFurnitureName(int FurnitureNameId)
-	{
-		if (selectedFurniture?.FurnitureName != null && selectedFurniture.FurnitureNameID == FurnitureNameId)
-			return selectedFurniture.FurnitureName.Name;
+            try
+            {
+                selectedOrder.Furnitures = selectedFurnitures;
+                foreach (var furniture in selectedOrder.Furnitures)
+                {
+                    furniture.FurnitureName = null;
+                }
 
-		var name = FurnitureNames?.FirstOrDefault(x => x.ID == FurnitureNameId);
+                await OrderService.UpdateOrder(selectedOrder);
+                await editModalRef.Hide();
+                await Refresh();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при обновлении: {ex.Message}");
+                await JSRuntime.InvokeVoidAsync("alert", $"Ошибка при обновлении: {ex.Message}");
+            }
+        }
+    }
+    <!-- ОБНОВИТЬ ЗАКАЗ -->
+    <!-- УДАЛИТЬ ЗАКАЗ -->
+    private void DeleteOrder(Order order)
+    {
+        selectedOrder = new Order
+            {
+                ID = order.ID,
+                OrderNumber = order.OrderNumber,
+                OrderStatus = order.OrderStatus,
+                OrderPriority = order.OrderPriority,
+                AdmissionDate = order.AdmissionDate,
+                OrderAuthor = order.OrderAuthor,
+                Furnitures = order.Furnitures?.ToList() ?? new List<Furniture>()
+            };
 
-		return name?.Name ?? "Неизвестно";
-	}
-	<!-- ПОЛУЧИТЬ НАИМЕНОВАНИЕ ОСНАСТКИ -->
+        if (order.Furnitures?.Any() == true)
+        {
+            var originalFurniture = order.Furnitures.First();
+            selectedFurniture = new Furniture
+                {
+                    ID = originalFurniture.ID,
+                    OrderQuantity = originalFurniture.OrderQuantity,
+                    FurnitureNameID = originalFurniture.FurnitureNameID,
+                    FurnitureName = originalFurniture.FurnitureName
+                };
+            selectedOrder.Furnitures.Add(selectedFurniture);
+        }
+        else
+        {
+            selectedFurniture = new Furniture();
+        }
+
+        deleteModalRef.Show();
+    }
+    <!-- УДАЛИТЬ ЗАКАЗ -->
+    <!-- ПОДТВЕРДИТЬ УДАЛЕНИЕ ЗАКАЗА -->
+    private async Task ConfirmDelete()
+    {
+        if (selectedOrder != null)
+        {
+            await OrderService.DeleteOrder(selectedOrder.ID);
+            await Refresh();
+            await deleteModalRef.Hide();
+        }
+    }
+    <!-- ПОДТВЕРДИТЬ УДАЛЕНИЕ ЗАКАЗА -->
+    <!-- ОБНОВИТЬ ДАННЫЕ -->
+    private async Task Refresh()
+    {
+        orders = new List<Order>();
+        StateHasChanged();
+
+        orders = await OrderService.GetAllOrders();
+        StateHasChanged();
+    }
+    <!-- ОБНОВИТЬ ДАННЫЕ -->
+    <!-- ПОЛУЧИТЬ НАИМЕНОВАНИЕ ОСНАСТКИ -->
+    private string GetFurnitureName(int FurnitureNameId)
+    {
+        if (selectedFurniture?.FurnitureName != null && selectedFurniture.FurnitureNameID == FurnitureNameId)
+            return selectedFurniture.FurnitureName.Name;
+
+        var name = FurnitureNames?.FirstOrDefault(x => x.ID == FurnitureNameId);
+        return name?.Name ?? "Неизвестно";
+    }
+    <!-- ПОЛУЧИТЬ НАИМЕНОВАНИЕ ОСНАСТКИ -->
 }
