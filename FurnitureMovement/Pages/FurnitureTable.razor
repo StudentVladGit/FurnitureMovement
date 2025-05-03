@@ -20,6 +20,36 @@
     <DataGridColumns>
         <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.ID)" Caption="ID" />
         <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.Name)" Caption="Наименование" />
+        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.Material)" Caption="Материал" />
+        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.ProductionTime)" Caption="Время производства" />
+        <DataGridColumn TItem="FurnitureName" Caption="Чертеж">
+            <DisplayTemplate Context="furnitureName">
+                @if (!string.IsNullOrEmpty(furnitureName.Drawing))
+                {
+                    <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowDrawingModal(furnitureName.Drawing)">
+                        Показать чертеж
+                    </Button>
+                }
+                else
+                {
+                    <span>Не указано</span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn TItem="FurnitureName" Caption="Изображение">
+            <DisplayTemplate Context="furnitureName">
+                @if (!string.IsNullOrEmpty(furnitureName.Image))
+                {
+                    <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowImageModal(furnitureName.Image)">
+                        Показать фото
+                    </Button>
+                }
+                else
+                {
+                    <span>Не указано</span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
         <DataGridColumn TItem="FurnitureName" Caption="Действия" Sortable="false">
             <DisplayTemplate Context="name">
                 <div class="d-flex justify-content-end gap-2">
@@ -46,6 +76,26 @@
             <Field>
                 <FieldLabel>Наименование оснастки</FieldLabel>
                 <TextEdit @bind-Text="currentFurnitureName.Name" />
+                @if (string.IsNullOrWhiteSpace(currentFurnitureName.Name))
+                {
+                    <FieldHelp Style="color: red;">Наименование не может быть пустым</FieldHelp>
+                }
+            </Field>
+            <Field>
+                <FieldLabel>Материал</FieldLabel>
+                <TextEdit @bind-Text="currentFurnitureName.Material" />
+            </Field>
+            <Field>
+                <FieldLabel>Время производства</FieldLabel>
+                <TextEdit @bind-Text="currentFurnitureName.ProductionTime" />
+            </Field>
+            <Field>
+                <FieldLabel>Чертеж (ссылка или описание)</FieldLabel>
+                <TextEdit @bind-Text="currentFurnitureName.Drawing" />
+            </Field>
+            <Field>
+                <FieldLabel>Изображение (путь или URL)</FieldLabel>
+                <TextEdit @bind-Text="currentFurnitureName.Image" />
             </Field>
         </ModalBody>
         <ModalFooter>
@@ -55,11 +105,61 @@
     </ModalContent>
 </Modal>
 
+<!-- Модальное окно для изображения -->
+<Modal @ref="imageModalRef" Centered>
+    <ModalContent Style="text-align: center;">
+        <ModalHeader>
+            <ModalTitle>Просмотр изображения</ModalTitle>
+            <CloseButton @onclick="HideImageModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (!string.IsNullOrEmpty(currentImage))
+            {
+                <img src="@currentImage" alt="Изображение оснастки" style="max-width: 90%; max-height: 80vh;" />
+            }
+            else
+            {
+                <p>Изображение недоступно</p>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideImageModal">Закрыть</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+<!-- Модальное окно для чертежа -->
+<Modal @ref="drawingModalRef" Centered>
+    <ModalContent Style="text-align: center;">
+        <ModalHeader>
+            <ModalTitle>Просмотр чертежа</ModalTitle>
+            <CloseButton @onclick="HideDrawingModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (!string.IsNullOrEmpty(currentDrawing))
+            {
+                <img src="@currentDrawing" alt="Чертеж оснастки" style="max-width: 90%; max-height: 80vh;" />
+            }
+            else
+            {
+                <p>Чертеж недоступен</p>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideDrawingModal">Закрыть</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
 @code {
     private Modal addModalRef = new Modal();
+    private Modal imageModalRef = new Modal();
+    private Modal drawingModalRef = new Modal(); // Новое модальное окно для чертежа
     private List<FurnitureName> FurnitureNames = new();
     private FurnitureName currentFurnitureName = new();
     private bool isEditing = false;
+    private string currentImage = "";
+    private string currentDrawing = ""; // Переменная для хранения текущего чертежа
 
     protected override async Task OnInitializedAsync()
     {
@@ -69,6 +169,8 @@
     private async Task LoadFurnitureNames()
     {
         FurnitureNames = await OrderService.GetAllFurnitureNames();
+        // Фильтруем по DeleteIndicator
+        FurnitureNames = FurnitureNames.Where(fn => fn.DeleteIndicator == 0).ToList();
         StateHasChanged();
     }
 
@@ -94,6 +196,8 @@
 
         try
         {
+            Console.WriteLine($"Saving FurnitureName: ID={currentFurnitureName.ID}, Name={currentFurnitureName.Name}, Material={currentFurnitureName.Material}, ProductionTime={currentFurnitureName.ProductionTime}, Drawing={currentFurnitureName.Drawing}, Image={currentFurnitureName.Image}");
+
             if (isEditing)
             {
                 await OrderService.UpdateFurnitureName(currentFurnitureName);
@@ -114,7 +218,16 @@
 
     private void EditName(FurnitureName name)
     {
-        currentFurnitureName = new FurnitureName { ID = name.ID, Name = name.Name };
+        currentFurnitureName = new FurnitureName
+            {
+                ID = name.ID,
+                Name = name.Name,
+                Material = name.Material,
+                ProductionTime = name.ProductionTime,
+                Drawing = name.Drawing,
+                Image = name.Image,
+                DeleteIndicator = name.DeleteIndicator
+            };
         isEditing = true;
         addModalRef.Show();
     }
@@ -133,5 +246,29 @@
         {
             await JSRuntime.InvokeVoidAsync("alert", ex.Message);
         }
+    }
+
+    private void ShowImageModal(string imageUrl)
+    {
+        currentImage = imageUrl;
+        imageModalRef.Show();
+    }
+
+    private void HideImageModal()
+    {
+        imageModalRef.Hide();
+        currentImage = "";
+    }
+
+    private void ShowDrawingModal(string drawingUrl)
+    {
+        currentDrawing = drawingUrl;
+        drawingModalRef.Show();
+    }
+
+    private void HideDrawingModal()
+    {
+        drawingModalRef.Hide();
+        currentDrawing = "";
     }
 }

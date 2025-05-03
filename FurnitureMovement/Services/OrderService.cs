@@ -165,6 +165,12 @@ public class OrderService : IOrderService
             throw new ArgumentException("Оснастка не найдена");
 
         existing.Name = FurnitureName.Name;
+        existing.Material = FurnitureName.Material;
+        existing.ProductionTime = FurnitureName.ProductionTime;
+        existing.Drawing = FurnitureName.Drawing;
+        existing.Image = FurnitureName.Image;
+        existing.DeleteIndicator = FurnitureName.DeleteIndicator;
+
         await context.SaveChangesAsync();
     }
 
@@ -191,6 +197,7 @@ public class OrderService : IOrderService
         var context = _myFactory.CreateDbContext();
         return await context.FurnitureNames
             .Where(o => o.DeleteIndicator == 0)
+            .OrderBy(o => o.ID)
             .ToListAsync();
     }
 
@@ -249,6 +256,7 @@ public class OrderService : IOrderService
         using var context = _myFactory.CreateDbContext();
         return await context.OrderAuthors
             .Where(o => o.DeleteIndicator == 0)
+            .OrderBy(o => o.ID)
             .ToListAsync();
     }
 

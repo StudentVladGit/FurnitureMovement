@@ -19,6 +19,10 @@ namespace FurnitureMovement.Migrations
                     ID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Material = table.Column<string>(type: "text", nullable: true),
+                    ProductionTime = table.Column<string>(type: "text", nullable: true),
+                    Drawing = table.Column<string>(type: "text", nullable: true),
+                    Image = table.Column<string>(type: "text", nullable: true),
                     DeleteIndicator = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>

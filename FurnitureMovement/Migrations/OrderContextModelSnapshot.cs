@@ -59,10 +59,22 @@ namespace FurnitureMovement.Migrations
                     b.Property<int>("DeleteIndicator")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Drawing")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Image")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Material")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProductionTime")
+                        .HasColumnType("text");
 
                     b.HasKey("ID");
 
