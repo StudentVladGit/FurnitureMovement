@@ -26,37 +26,31 @@ else
               ShowPager="true">
         <DataGridColumns>
             <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
-
             <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер">
                 <DisplayTemplate Context="order">
                     <a href="javascript:void(0)" @onclick="() => ShowFurnituresModal(order)">@order.OrderNumber</a>
                 </DisplayTemplate>
             </DataGridColumn>
-
             <DataGridColumn TItem="Order" Caption="Статус">
                 <DisplayTemplate Context="order">
                     @order.OrderStatus.GetDescription()
                 </DisplayTemplate>
             </DataGridColumn>
-
             <DataGridColumn TItem="Order" Caption="Приоритет">
                 <DisplayTemplate Context="order">
                     @order.OrderPriority.GetDescription()
                 </DisplayTemplate>
             </DataGridColumn>
-
             <DataGridColumn TItem="Order" Caption="Дата">
                 <DisplayTemplate Context="order">
                     @(order.AdmissionDate.ToString("dd/MM/yyyy"))
                 </DisplayTemplate>
             </DataGridColumn>
-
             <DataGridColumn TItem="Order" Caption="Автор">
                 <DisplayTemplate Context="order">
                     @(order.OrderAuthor?.Name ?? "Не указан")
                 </DisplayTemplate>
             </DataGridColumn>
-
             <DataGridColumn TItem="Order" Caption="Действия" Sortable="false">
                 <DisplayTemplate Context="order">
                     <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditOrder(order)">
@@ -74,19 +68,23 @@ else
 
 <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ОТОБРАЖЕНИЯ ПОЗИЦИЙ ОСНАСТКИ -->
 <Modal @ref="furnituresModalRef">
-    <ModalContent>
+    <ModalContent Size="ModalSize.Large">
         <ModalHeader>
             <ModalTitle>Позиции заказа @currentOrder?.OrderNumber</ModalTitle>
             <CloseButton @onclick="HideFurnituresModal" />
         </ModalHeader>
-        <ModalBody>
+        <ModalBody Style="padding: 0;">
             @if (currentOrder?.Furnitures != null && currentOrder.Furnitures.Any())
             {
-                <table class="table table-bordered">
+                <table class="table table-bordered" style="width: 98%; table-layout: auto; margin: 0 auto;">
                     <thead>
                         <tr>
-                            <th>Наименование</th>
-                            <th>Количество</th>
+                            <th style="min-width: 150px;">Наименование</th>
+                            <th style="min-width: 100px;">Количество</th>
+                            <th style="min-width: 120px;">Материал</th>
+                            <th style="min-width: 150px;">Время производства</th>
+                            <th style="min-width: 120px;">Чертеж</th>
+                            <th style="min-width: 120px;">Изображение</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -95,6 +93,32 @@ else
                             <tr>
                                 <td>@(furniture.FurnitureName?.Name ?? "Не указано")</td>
                                 <td>@furniture.OrderQuantity</td>
+                                <td>@(furniture.FurnitureName?.Material ?? "Не указано")</td>
+                                <td>@(furniture.FurnitureName?.ProductionTime ?? "Не указано")</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(furniture.FurnitureName?.Drawing))
+                                    {
+                                        <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowDrawingModal(furniture.FurnitureName.Drawing)">
+                                            Показать чертеж
+                                        </Button>
+                                    }
+                                    else
+                                    {
+                                        <span>Не указано</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(furniture.FurnitureName?.Image))
+                                    {
+                                        <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowImageModal(furniture.FurnitureName.Image)">
+                                            Показать фото
+                                        </Button>
+                                    }
+                                    else
+                                    {
+                                        <span>Не указано</span>
+                                    }
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -111,6 +135,52 @@ else
     </ModalContent>
 </Modal>
 <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ОТОБРАЖЕНИЯ ПОЗИЦИЙ ОСНАСТКИ -->
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ИЗОБРАЖЕНИЯ -->
+<Modal @ref="imageModalRef" Centered>
+    <ModalContent Style="text-align: center;">
+        <ModalHeader>
+            <ModalTitle>Просмотр изображения</ModalTitle>
+            <CloseButton @onclick="HideImageModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (!string.IsNullOrEmpty(currentImage))
+            {
+                <img src="@currentImage" alt="Изображение оснастки" style="max-width: 90%; max-height: 80vh;" />
+            }
+            else
+            {
+                <p>Изображение недоступно</p>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideImageModal">Закрыть</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ЧЕРТЕЖА -->
+<Modal @ref="drawingModalRef" Centered>
+    <ModalContent Style="text-align: center;">
+        <ModalHeader>
+            <ModalTitle>Просмотр чертежа</ModalTitle>
+            <CloseButton @onclick="HideDrawingModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (!string.IsNullOrEmpty(currentDrawing))
+            {
+                <img src="@currentDrawing" alt="Чертеж оснастки" style="max-width: 90%; max-height: 80vh;" />
+            }
+            else
+            {
+                <p>Чертеж недоступен</p>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideDrawingModal">Закрыть</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
 <!-- МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
 <Modal @ref="addModalRef">
     <ModalContent>
@@ -323,16 +393,6 @@ else
                 <TextEdit @bind-Text="selectedOrder.OrderNumber" ReadOnly />
              </Field>
 
-             @* <Field>
-                 <FieldLabel>Наименование</FieldLabel>
-                 <TextEdit Text="@GetFurnitureName(selectedFurniture.FurnitureNameID)" ReadOnly />
-             </Field>
-
-             <Field>
-                 <FieldLabel>Количество</FieldLabel>
-                 <NumericEdit TValue="long" @bind-Value="selectedFurniture.OrderQuantity" ReadOnly />
-             </Field> *@
-
              <Field>
                  <FieldLabel>Статус</FieldLabel>
                  <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus" Disabled>
@@ -375,7 +435,9 @@ else
     private Modal addModalRef = new Modal();
     private Modal editModalRef = new Modal();
     private Modal deleteModalRef = new Modal();
-    private Modal furnituresModalRef = new Modal(); // Новое модальное окно для позиций оснастки
+    private Modal furnituresModalRef = new Modal();
+    private Modal imageModalRef = new Modal();
+    private Modal drawingModalRef = new Modal();
 
     private List<Order> orders = new();
     private List<FurnitureName> FurnitureNames = new();
@@ -393,7 +455,9 @@ else
     private Furniture selectedFurniture = new();
     private List<Furniture> selectedFurnitures = new();
 
-    private Order currentOrder; // Для хранения текущего заказа в модальном окне позиций
+    private Order currentOrder;
+    private string currentImage = "";
+    private string currentDrawing = "";
 
     <!-- ИНИЦИАЛИЗАЦИЯ -->
     protected override async Task OnInitializedAsync()
@@ -415,6 +479,34 @@ else
     {
         furnituresModalRef.Hide();
         currentOrder = null;
+    }
+
+    <!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО ДЛЯ ИЗОБРАЖЕНИЯ -->
+    private void ShowImageModal(string imageUrl)
+    {
+        currentImage = imageUrl;
+        imageModalRef.Show();
+    }
+
+    <!-- ЗАКРЫТЬ МОДАЛЬНОЕ ОКНО ДЛЯ ИЗОБРАЖЕНИЯ -->
+    private void HideImageModal()
+    {
+        imageModalRef.Hide();
+        currentImage = "";
+    }
+
+    <!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО ДЛЯ ЧЕРТЕЖА -->
+    private void ShowDrawingModal(string drawingUrl)
+    {
+        currentDrawing = drawingUrl;
+        drawingModalRef.Show();
+    }
+
+    <!-- ЗАКРЫТЬ МОДАЛЬНОЕ ОКНО ДЛЯ ЧЕРТЕЖА -->
+    private void HideDrawingModal()
+    {
+        drawingModalRef.Hide();
+        currentDrawing = "";
     }
 
     <!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->

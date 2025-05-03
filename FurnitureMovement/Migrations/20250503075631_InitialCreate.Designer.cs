@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20250427123926_InitialCreate")]
+    [Migration("20250503075631_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -62,10 +62,22 @@ namespace FurnitureMovement.Migrations
                     b.Property<int>("DeleteIndicator")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Drawing")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Image")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Material")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProductionTime")
+                        .HasColumnType("text");
 
                     b.HasKey("ID");
 
