@@ -24,7 +24,7 @@
         <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.ProductionTime)" Caption="Время производства" />
         <DataGridColumn TItem="FurnitureName" Caption="Чертеж">
             <DisplayTemplate Context="furnitureName">
-                @if (!string.IsNullOrEmpty(furnitureName.Drawing))
+                @if (furnitureName.Drawing != "Не указано")
                 {
                     <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowDrawingModal(furnitureName.Drawing)">
                         Показать чертеж
@@ -38,7 +38,7 @@
         </DataGridColumn>
         <DataGridColumn TItem="FurnitureName" Caption="Изображение">
             <DisplayTemplate Context="furnitureName">
-                @if (!string.IsNullOrEmpty(furnitureName.Image))
+                @if (furnitureName.Image != "Не указано")
                 {
                     <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowImageModal(furnitureName.Image)">
                         Показать фото
@@ -113,7 +113,7 @@
             <CloseButton @onclick="HideImageModal" />
         </ModalHeader>
         <ModalBody>
-            @if (!string.IsNullOrEmpty(currentImage))
+            @if (!string.IsNullOrEmpty(currentImage) && currentImage != "Не указано")
             {
                 <img src="@currentImage" alt="Изображение оснастки" style="max-width: 90%; max-height: 80vh;" />
             }
@@ -136,7 +136,7 @@
             <CloseButton @onclick="HideDrawingModal" />
         </ModalHeader>
         <ModalBody>
-            @if (!string.IsNullOrEmpty(currentDrawing))
+            @if (!string.IsNullOrEmpty(currentDrawing) && currentDrawing != "Не указано")
             {
                 <img src="@currentDrawing" alt="Чертеж оснастки" style="max-width: 90%; max-height: 80vh;" />
             }
@@ -154,12 +154,12 @@
 @code {
     private Modal addModalRef = new Modal();
     private Modal imageModalRef = new Modal();
-    private Modal drawingModalRef = new Modal(); // Новое модальное окно для чертежа
+    private Modal drawingModalRef = new Modal();
     private List<FurnitureName> FurnitureNames = new();
     private FurnitureName currentFurnitureName = new();
     private bool isEditing = false;
     private string currentImage = "";
-    private string currentDrawing = ""; // Переменная для хранения текущего чертежа
+    private string currentDrawing = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -169,7 +169,6 @@
     private async Task LoadFurnitureNames()
     {
         FurnitureNames = await OrderService.GetAllFurnitureNames();
-        // Фильтруем по DeleteIndicator
         FurnitureNames = FurnitureNames.Where(fn => fn.DeleteIndicator == 0).ToList();
         StateHasChanged();
     }
@@ -193,6 +192,10 @@
             await JSRuntime.InvokeVoidAsync("alert", "Наименование не может быть пустым!");
             return;
         }
+
+        // Устанавливаем значения по умолчанию, если поля пустые
+        currentFurnitureName.Drawing = string.IsNullOrWhiteSpace(currentFurnitureName.Drawing) ? "Не указано" : currentFurnitureName.Drawing;
+        currentFurnitureName.Image = string.IsNullOrWhiteSpace(currentFurnitureName.Image) ? "Не указано" : currentFurnitureName.Image;
 
         try
         {

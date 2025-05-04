@@ -23,6 +23,11 @@ public interface IOrderService
     Task<List<OrderAuthor>> GetAllAuthors();
 
     Task<List<Order>> GetCompletedOrders();
+
+    // Новые методы для работы со складом
+    Task AddToWarehouse(WarehouseItem item);
+    Task RemoveFromWarehouse(int id, long quantityToRemove);
+    Task<List<WarehouseItem>> GetAllWarehouseItems();
 }
 
 public class OrderService : IOrderService
@@ -62,55 +67,145 @@ public class OrderService : IOrderService
         await context.SaveChangesAsync();
     }
 
+    //public async Task UpdateOrder(Order updatedOrder)
+    //{
+    //    using var context = _myFactory.CreateDbContext();
+
+    //    var existingOrder = await context.Orders
+    //        .Include(o => o.OrderAuthor)
+    //        .Include(o => o.Furnitures)
+    //        .FirstOrDefaultAsync(o => o.ID == updatedOrder.ID);
+
+    //    if (existingOrder == null) return;
+
+    //    var oldStatus = existingOrder.OrderStatus;
+
+    //    existingOrder.OrderNumber = updatedOrder.OrderNumber;
+    //    existingOrder.OrderStatus = updatedOrder.OrderStatus;
+    //    existingOrder.OrderPriority = updatedOrder.OrderPriority;
+    //    existingOrder.AdmissionDate = updatedOrder.AdmissionDate;
+    //    existingOrder.OrderAuthorID = updatedOrder.OrderAuthorID;
+
+    //    // Удаляем старые оснастки
+    //    if (existingOrder.Furnitures != null && existingOrder.Furnitures.Any())
+    //    {
+    //        context.Furnitures.RemoveRange(existingOrder.Furnitures);
+    //    }
+
+    //    // Добавляем новые оснастки
+    //    if (updatedOrder.Furnitures != null && updatedOrder.Furnitures.Any())
+    //    {
+    //        foreach (var furniture in updatedOrder.Furnitures)
+    //        {
+    //            var orderNameExists = await context.FurnitureNames.AnyAsync(x => x.ID == furniture.FurnitureNameID);
+    //            if (!orderNameExists)
+    //                throw new ArgumentException($"Наименование с ID {furniture.FurnitureNameID} не существует");
+
+    //            furniture.OrderID = existingOrder.ID;
+    //            furniture.FurnitureName = null; 
+    //            context.Furnitures.Add(furniture);
+    //        }
+    //    }
+
+    //    if (oldStatus != existingOrder.OrderStatus)
+    //    {
+    //        _notificationService.AddNotification(
+    //            $"{existingOrder.OrderNumber} изменил статус на {existingOrder.OrderStatus} в {DateTime.Now:HH:mm}",
+    //            existingOrder.OrderStatus);
+    //    }
+
+    //    await context.SaveChangesAsync();
+    //}
+
     public async Task UpdateOrder(Order updatedOrder)
     {
         using var context = _myFactory.CreateDbContext();
+        using var transaction = await context.Database.BeginTransactionAsync();
 
-        var existingOrder = await context.Orders
-            .Include(o => o.OrderAuthor)
-            .Include(o => o.Furnitures)
-            .FirstOrDefaultAsync(o => o.ID == updatedOrder.ID);
-
-        if (existingOrder == null) return;
-
-        var oldStatus = existingOrder.OrderStatus;
-
-        existingOrder.OrderNumber = updatedOrder.OrderNumber;
-        existingOrder.OrderStatus = updatedOrder.OrderStatus;
-        existingOrder.OrderPriority = updatedOrder.OrderPriority;
-        existingOrder.AdmissionDate = updatedOrder.AdmissionDate;
-        existingOrder.OrderAuthorID = updatedOrder.OrderAuthorID;
-
-        // Удаляем старые оснастки
-        if (existingOrder.Furnitures != null && existingOrder.Furnitures.Any())
+        try
         {
-            context.Furnitures.RemoveRange(existingOrder.Furnitures);
-        }
+            var existingOrder = await context.Orders
+                .Include(o => o.OrderAuthor)
+                .Include(o => o.Furnitures)
+                .ThenInclude(f => f.FurnitureName)
+                .FirstOrDefaultAsync(o => o.ID == updatedOrder.ID);
 
-        // Добавляем новые оснастки
-        if (updatedOrder.Furnitures != null && updatedOrder.Furnitures.Any())
-        {
-            foreach (var furniture in updatedOrder.Furnitures)
+            if (existingOrder == null)
             {
-                // Проверяем, что FurnitureNameID ссылается на существующую запись
-                var orderNameExists = await context.FurnitureNames.AnyAsync(x => x.ID == furniture.FurnitureNameID);
-                if (!orderNameExists)
-                    throw new ArgumentException($"Наименование с ID {furniture.FurnitureNameID} не существует");
-
-                furniture.OrderID = existingOrder.ID;
-                furniture.FurnitureName = null; // Убедимся, что FurnitureName не добавляется
-                context.Furnitures.Add(furniture);
+                await context.Orders.AddAsync(updatedOrder);
             }
-        }
+            else
+            {
+                var oldStatus = existingOrder.OrderStatus;
 
-        if (oldStatus != existingOrder.OrderStatus)
+                existingOrder.OrderNumber = updatedOrder.OrderNumber;
+                existingOrder.OrderStatus = updatedOrder.OrderStatus;
+                existingOrder.OrderPriority = updatedOrder.OrderPriority;
+                existingOrder.AdmissionDate = updatedOrder.AdmissionDate;
+                existingOrder.OrderAuthorID = updatedOrder.OrderAuthorID;
+
+                // Удаляем старые оснастки
+                if (existingOrder.Furnitures != null && existingOrder.Furnitures.Any())
+                {
+                    context.Furnitures.RemoveRange(existingOrder.Furnitures);
+                }
+
+                // Добавляем новые оснастки
+                if (updatedOrder.Furnitures != null && updatedOrder.Furnitures.Any())
+                {
+                    foreach (var furniture in updatedOrder.Furnitures)
+                    {
+                        var orderNameExists = await context.FurnitureNames.AnyAsync(x => x.ID == furniture.FurnitureNameID);
+                        if (!orderNameExists)
+                            throw new ArgumentException($"Наименование с ID {furniture.FurnitureNameID} не существует");
+
+                        furniture.OrderID = existingOrder.ID;
+                        furniture.FurnitureName = null;
+                        context.Furnitures.Add(furniture);
+                    }
+                }
+
+                // Если статус изменился на Completed, добавляем данные на склад
+                if (oldStatus != OrderStatus.Completed && updatedOrder.OrderStatus == OrderStatus.Completed)
+                {
+                    foreach (var furniture in updatedOrder.Furnitures)
+                    {
+                        var furnitureName = await context.FurnitureNames
+                            .FirstOrDefaultAsync(fn => fn.ID == furniture.FurnitureNameID);
+
+                        if (furnitureName == null)
+                            throw new InvalidOperationException($"Не найдено наименование оснастки с ID {furniture.FurnitureNameID}");
+
+                        var warehouseItem = new WarehouseItem
+                        {
+                            FurnitureName = furnitureName.Name,
+                            FurnitureNameId = furniture.FurnitureNameID,
+                            Quantity = furniture.OrderQuantity,
+                            AdmissionDate = updatedOrder.AdmissionDate,
+                            Material = furnitureName.Material ?? "Не указано",
+                            Drawing = furnitureName.Drawing,
+                            Image = furnitureName.Image
+                        };
+                        await AddToWarehouse(warehouseItem);
+                    }
+                }
+
+                if (oldStatus != existingOrder.OrderStatus)
+                {
+                    _notificationService.AddNotification(
+                        $"{existingOrder.OrderNumber} изменил статус на {existingOrder.OrderStatus} в {DateTime.Now:HH:mm}",
+                        existingOrder.OrderStatus);
+                }
+            }
+
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch (Exception ex)
         {
-            _notificationService.AddNotification(
-                $"{existingOrder.OrderNumber} изменил статус на {existingOrder.OrderStatus} в {DateTime.Now:HH:mm}",
-                existingOrder.OrderStatus);
+            await transaction.RollbackAsync();
+            throw new Exception($"Ошибка при обновлении заказа: {ex.Message}", ex);
         }
-
-        await context.SaveChangesAsync();
     }
 
     public async Task DeleteOrder(int id)
@@ -208,7 +303,7 @@ public class OrderService : IOrderService
             throw new ArgumentException("Имя автора не может быть пустым");
 
         var authorExists = await context.OrderAuthors
-            .AnyAsync(a => a.Name.ToLower() == author.Name.ToLower());
+            .AnyAsync(a => a.Name.ToLower() == author.Name.ToLower() && author.DeleteIndicator == 1);
 
         if (authorExists)
             throw new ArgumentException("Автор с таким именем уже существует");
@@ -226,7 +321,7 @@ public class OrderService : IOrderService
 
         var duplicateExists = await context.OrderAuthors
             .AnyAsync(a => a.ID != author.ID &&
-                          a.Name.ToLower() == author.Name.ToLower());
+                          a.Name.ToLower() == author.Name.ToLower() && author.DeleteIndicator == 1);
 
         if (duplicateExists)
             throw new ArgumentException("Автор с таким именем уже существует");
@@ -269,5 +364,74 @@ public class OrderService : IOrderService
             .Include(o => o.Furnitures)
                 .ThenInclude(f => f.FurnitureName)
             .ToListAsync();
+    }
+
+
+    public async Task AddToWarehouse(WarehouseItem item)
+    {
+        using var context = _myFactory.CreateDbContext();
+
+        var existingItem = await context.WarehouseItems
+            .FirstOrDefaultAsync(w => w.FurnitureNameId == item.FurnitureNameId);
+
+        if (existingItem != null)
+        {
+            // Обновляем количество
+            existingItem.Quantity += item.Quantity;
+
+            // Обновляем дату поступления, если новая дата позже
+            existingItem.AdmissionDate = item.AdmissionDate > existingItem.AdmissionDate ? item.AdmissionDate : existingItem.AdmissionDate;
+
+            // Обновляем чертеж и фото, если они отличаются
+            if (existingItem.Drawing != item.Drawing)
+            {
+                existingItem.Drawing = item.Drawing;
+            }
+
+            if (existingItem.Image != item.Image)
+            {
+                existingItem.Image = item.Image;
+            }
+
+            // Обновляем материал, если он изменился
+            if (existingItem.Material != item.Material)
+            {
+                existingItem.Material = item.Material;
+            }
+
+            context.WarehouseItems.Update(existingItem);
+        }
+        else
+        {
+            await context.WarehouseItems.AddAsync(item);
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    public async Task RemoveFromWarehouse(int id, long quantityToRemove)
+    {
+        using var context = _myFactory.CreateDbContext();
+
+        var item = await context.WarehouseItems.FindAsync(id);
+        if (item != null)
+        {
+            if (quantityToRemove >= item.Quantity)
+            {
+                context.WarehouseItems.Remove(item); // Удаляем, если списываем всё количество
+            }
+            else if (quantityToRemove > 0)
+            {
+                item.Quantity -= quantityToRemove; // Уменьшаем количество
+                context.WarehouseItems.Update(item);
+            }
+            await context.SaveChangesAsync();
+        }
+    }
+
+    public async Task<List<WarehouseItem>> GetAllWarehouseItems()
+    {
+        using var context = _myFactory.CreateDbContext();
+        return await context.WarehouseItems.ToListAsync();
     }
 }

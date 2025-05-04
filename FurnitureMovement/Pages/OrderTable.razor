@@ -96,7 +96,7 @@ else
                                 <td>@(furniture.FurnitureName?.Material ?? "Не указано")</td>
                                 <td>@(furniture.FurnitureName?.ProductionTime ?? "Не указано")</td>
                                 <td>
-                                    @if (!string.IsNullOrEmpty(furniture.FurnitureName?.Drawing))
+                                    @if (!string.IsNullOrEmpty(furniture.FurnitureName?.Drawing) && furniture.FurnitureName.Drawing != "Не указано")
                                     {
                                         <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowDrawingModal(furniture.FurnitureName.Drawing)">
                                             Показать чертеж
@@ -108,7 +108,7 @@ else
                                     }
                                 </td>
                                 <td>
-                                    @if (!string.IsNullOrEmpty(furniture.FurnitureName?.Image))
+                                    @if (!string.IsNullOrEmpty(furniture.FurnitureName?.Image) && furniture.FurnitureName.Image != "Не указано")
                                     {
                                         <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowImageModal(furniture.FurnitureName.Image)">
                                             Показать фото

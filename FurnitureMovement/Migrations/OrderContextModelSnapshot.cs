@@ -150,12 +150,24 @@ namespace FurnitureMovement.Migrations
                     b.Property<DateTime>("AdmissionDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("Drawing")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("FurnitureName")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("FurnitureNameId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Image")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Material")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<long>("Quantity")
                         .HasColumnType("bigint");

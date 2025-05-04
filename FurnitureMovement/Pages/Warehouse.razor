@@ -24,9 +24,42 @@
                 @item.AdmissionDate.ToString("dd/MM/yyyy")
             </DisplayTemplate>
         </DataGridColumn>
+        <DataGridColumn TItem="WarehouseItem" Caption="Материал">
+            <DisplayTemplate Context="item">
+                @(item.Material ?? "Не указано")
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn TItem="WarehouseItem" Caption="Чертеж">
+            <DisplayTemplate Context="item">
+                @if (!string.IsNullOrEmpty(item.Drawing) && item.Drawing != "Не указано")
+                {
+                    <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowDrawingModal(item.Drawing)">
+                        Показать чертеж
+                    </Button>
+                }
+                else
+                {
+                    <span>Не указано</span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn TItem="WarehouseItem" Caption="Изображение">
+            <DisplayTemplate Context="item">
+                @if (!string.IsNullOrEmpty(item.Image) && item.Image != "Не указано")
+                {
+                    <Button Color="Color.Info" Size="Size.Small" @onclick="() => ShowImageModal(item.Image)">
+                        Показать фото
+                    </Button>
+                }
+                else
+                {
+                    <span>Не указано</span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
         <DataGridColumn TItem="WarehouseItem" Caption="Действия" Sortable="false">
             <DisplayTemplate Context="item">
-                <Button Color="Color.Danger" Size="Size.Small" @onclick="() => RemoveFromWarehouse(item)">
+                <Button Color="Color.Danger" Size="Size.Small" @onclick="() => ShowRemoveModal(item.ID, item.Quantity)">
                     Списать
                 </Button>
             </DisplayTemplate>
@@ -34,9 +67,87 @@
     </DataGridColumns>
 </DataGrid>
 
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ИЗОБРАЖЕНИЯ -->
+<Modal @ref="imageModalRef" Centered>
+    <ModalContent Style="text-align: center;">
+        <ModalHeader>
+            <ModalTitle>Просмотр изображения</ModalTitle>
+            <CloseButton @onclick="HideImageModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (!string.IsNullOrEmpty(currentImage) && currentImage != "Не указано")
+            {
+                <img src="@currentImage" alt="Изображение оснастки" style="max-width: 90%; max-height: 80vh;" />
+            }
+            else
+            {
+                <p>Изображение недоступно</p>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideImageModal">Закрыть</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ЧЕРТЕЖА -->
+<Modal @ref="drawingModalRef" Centered>
+    <ModalContent Style="text-align: center;">
+        <ModalHeader>
+            <ModalTitle>Просмотр чертежа</ModalTitle>
+            <CloseButton @onclick="HideDrawingModal" />
+        </ModalHeader>
+        <ModalBody>
+            @if (!string.IsNullOrEmpty(currentDrawing) && currentDrawing != "Не указано")
+            {
+                <img src="@currentDrawing" alt="Чертеж оснастки" style="max-width: 90%; max-height: 80vh;" />
+            }
+            else
+            {
+                <p>Чертеж недоступен</p>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideDrawingModal">Закрыть</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ СПИСАНИЯ -->
+<Modal @ref="removeModalRef">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>Списание оснастки</ModalTitle>
+            <CloseButton @onclick="HideRemoveModal" />
+        </ModalHeader>
+        <ModalBody>
+            <Field>
+                <FieldLabel>Выберите количество для списания (доступно: @availableQuantity)</FieldLabel>
+                <NumericEdit @bind-Value="quantityToRemove" Min="1" Max="@availableQuantity" />
+                @if (quantityToRemove > availableQuantity)
+                {
+                    <FieldHelp Style="color: red;">Количество не может превышать доступное!</FieldHelp>
+                }
+            </Field>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" @onclick="HideRemoveModal">Отмена</Button>
+            <Button Color="Color.Danger" @onclick="ConfirmRemove" Disabled="@(quantityToRemove > availableQuantity || quantityToRemove <= 0)">Списать</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
 @code {
     private DataGrid<WarehouseItem> dataGrid;
     private List<WarehouseItem> warehouseItems = new();
+    private Modal imageModalRef = new Modal();
+    private Modal drawingModalRef = new Modal();
+    private Modal removeModalRef = new Modal();
+    private string currentImage = "";
+    private string currentDrawing = "";
+    private int itemIdToRemove;
+    private long availableQuantity;
+    private long quantityToRemove;
 
     protected override async Task OnInitializedAsync()
     {
@@ -45,47 +156,62 @@
 
     private async Task LoadWarehouseItems()
     {
-        // Получаем все выполненные заказы
-        var completedOrders = await OrderService.GetCompletedOrders();
-
-        // Группируем оснастку по наименованию и суммируем количество
-        warehouseItems = completedOrders
-            .SelectMany(o => o.Furnitures.Select(f => new WarehouseItem
-                {
-                    FurnitureName = f.FurnitureName.Name,
-                    Quantity = f.OrderQuantity,
-                    AdmissionDate = o.AdmissionDate,
-                    FurnitureNameId = f.FurnitureNameID,
-                }))
-            .GroupBy(item => item.FurnitureNameId)
-            .Select(group => new WarehouseItem
-                {
-                    FurnitureName = group.First().FurnitureName,
-                    Quantity = group.Sum(x => x.Quantity),
-                    AdmissionDate = group.Max(x => x.AdmissionDate),
-                    FurnitureNameId = group.Key
-                })
-            .ToList();
+        warehouseItems = await OrderService.GetAllWarehouseItems();
     }
 
-    private async Task RemoveFromWarehouse(WarehouseItem item)
+    private void ShowRemoveModal(int id, long quantity)
     {
-        var confirm = await JSRuntime.InvokeAsync<bool>("confirm",
-            $"Списать {item.Quantity} единиц оснастки '{item.FurnitureName}'?");
+        itemIdToRemove = id;
+        availableQuantity = quantity;
+        quantityToRemove = 1; // Устанавливаем начальное значение
+        removeModalRef.Show();
+    }
 
-        if (!confirm) return;
+    private void HideRemoveModal()
+    {
+        removeModalRef.Hide();
+        quantityToRemove = 0; // Сбрасываем значение
+    }
 
-        try
+    private async Task ConfirmRemove()
+    {
+        if (quantityToRemove > 0 && quantityToRemove <= availableQuantity)
         {
-            // Здесь можно добавить логику списания со склада
-            // Например, создать запись о списании в отдельной таблице
+            try
+            {
+                await OrderService.RemoveFromWarehouse(itemIdToRemove, quantityToRemove);
+                await JSRuntime.InvokeVoidAsync("alert", $"Списано {quantityToRemove} единиц оснастки");
+                await LoadWarehouseItems();
+                HideRemoveModal();
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
+            }
+        }
+    }
 
-            await JSRuntime.InvokeVoidAsync("alert", "Оснастка успешно списана");
-            await LoadWarehouseItems();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
-        }
+    private void ShowImageModal(string imageUrl)
+    {
+        currentImage = imageUrl;
+        imageModalRef.Show();
+    }
+
+    private void HideImageModal()
+    {
+        imageModalRef.Hide();
+        currentImage = "";
+    }
+
+    private void ShowDrawingModal(string drawingUrl)
+    {
+        currentDrawing = drawingUrl;
+        drawingModalRef.Show();
+    }
+
+    private void HideDrawingModal()
+    {
+        drawingModalRef.Hide();
+        currentDrawing = "";
     }
 }
