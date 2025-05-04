@@ -11,7 +11,7 @@ namespace FurnitureMovement.Data
         public int ID { get; set; }
 
         [Required]
-        public string FurnitureName { get; set; }
+        public string? FurnitureName { get; set; }
 
         [Required]
         public int FurnitureNameId { get; set; }
@@ -21,5 +21,9 @@ namespace FurnitureMovement.Data
 
         [Required]
         public DateTime AdmissionDate { get; set; }
+
+        public string? Material { get; set; } 
+        public string? Drawing { get; set; }  
+        public string? Image { get; set; }
     }
 }

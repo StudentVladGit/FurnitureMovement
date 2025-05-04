@@ -53,7 +53,10 @@ namespace FurnitureMovement.Migrations
                     FurnitureName = table.Column<string>(type: "text", nullable: false),
                     FurnitureNameId = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<long>(type: "bigint", nullable: false),
-                    AdmissionDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
+                    AdmissionDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    Material = table.Column<string>(type: "text", nullable: false),
+                    Drawing = table.Column<string>(type: "text", nullable: false),
+                    Image = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
