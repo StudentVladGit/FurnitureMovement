@@ -35,6 +35,10 @@ public class OrderService : IOrderService
     private IDbContextFactory<OrderContext> _myFactory;
     private readonly NotificationService _notificationService;
 
+    // Пороговое значение для разового списания
+    private const long SingleRemovalThreshold = 50; // Порог для одного списания
+    private const long LowStockThreshold = 10;
+
     public OrderService(IDbContextFactory<OrderContext> myFactory, NotificationService notificationService)
     {
         _myFactory = myFactory;
@@ -193,7 +197,7 @@ public class OrderService : IOrderService
                 if (oldStatus != existingOrder.OrderStatus)
                 {
                     _notificationService.AddNotification(
-                        $"{existingOrder.OrderNumber} изменил статус на {existingOrder.OrderStatus} в {DateTime.Now:HH:mm}",
+                        $"{existingOrder.OrderNumber} изменил статус на {existingOrder.OrderStatus.GetDescription()} в {DateTime.Now:HH:mm}",
                         existingOrder.OrderStatus);
                 }
             }
@@ -303,7 +307,7 @@ public class OrderService : IOrderService
             throw new ArgumentException("Имя автора не может быть пустым");
 
         var authorExists = await context.OrderAuthors
-            .AnyAsync(a => a.Name.ToLower() == author.Name.ToLower() && author.DeleteIndicator == 1);
+            .AnyAsync(a => a.Name.ToLower() == author.Name.ToLower() && author.DeleteIndicator == 0);
 
         if (authorExists)
             throw new ArgumentException("Автор с таким именем уже существует");
@@ -321,7 +325,7 @@ public class OrderService : IOrderService
 
         var duplicateExists = await context.OrderAuthors
             .AnyAsync(a => a.ID != author.ID &&
-                          a.Name.ToLower() == author.Name.ToLower() && author.DeleteIndicator == 1);
+                          a.Name.ToLower() == author.Name.ToLower() && author.DeleteIndicator == 0);
 
         if (duplicateExists)
             throw new ArgumentException("Автор с таким именем уже существует");
@@ -410,24 +414,42 @@ public class OrderService : IOrderService
     }
 
     public async Task RemoveFromWarehouse(int id, long quantityToRemove)
-    {
-        using var context = _myFactory.CreateDbContext();
+{
+    using var context = _myFactory.CreateDbContext();
 
-        var item = await context.WarehouseItems.FindAsync(id);
-        if (item != null)
+    var item = await context.WarehouseItems.FindAsync(id);
+    if (item != null)
+    {
+        if (quantityToRemove > SingleRemovalThreshold)
         {
-            if (quantityToRemove >= item.Quantity)
-            {
-                context.WarehouseItems.Remove(item); // Удаляем, если списываем всё количество
-            }
-            else if (quantityToRemove > 0)
-            {
-                item.Quantity -= quantityToRemove; // Уменьшаем количество
-                context.WarehouseItems.Update(item);
-            }
-            await context.SaveChangesAsync();
+            _notificationService.AddNotification(
+                $"Перерасход материала! Списано {quantityToRemove} единиц оснастки ({item.FurnitureName}, материал: {item.Material}) за раз. Порог: {SingleRemovalThreshold}.",
+                OrderStatus.Cancelled);
         }
+
+        if (quantityToRemove >= item.Quantity)
+        {
+            context.WarehouseItems.Remove(item);
+        }
+        else if (quantityToRemove > 0)
+        {
+            item.Quantity -= quantityToRemove;
+            if (item.Quantity < LowStockThreshold)
+            {
+                _notificationService.AddNotification(
+                    $"Низкий уровень остатков! Осталось {item.Quantity} единиц оснастки ({item.FurnitureName}, материал: {item.Material}). Порог: {LowStockThreshold}.",
+                    OrderStatus.InThePreparationProcess);
+            }
+            context.WarehouseItems.Update(item);
+        }
+        else
+        {
+            throw new ArgumentException("Количество для списания должно быть положительным.");
+        }
+
+        await context.SaveChangesAsync();
     }
+}
 
     public async Task<List<WarehouseItem>> GetAllWarehouseItems()
     {
