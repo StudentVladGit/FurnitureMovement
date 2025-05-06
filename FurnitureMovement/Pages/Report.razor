@@ -1,0 +1,217 @@
+﻿@page "/report"
+@using FurnitureMovement.Data
+@using FurnitureMovement.Services
+@using Blazorise
+@inject IOrderService OrderService
+@inject IJSRuntime JSRuntime // Добавим для экспорта в CSV
+
+<PageTitle>Отчет</PageTitle>
+
+<h3>Отчет по данным</h3>
+
+<h4>Статистика по заказам</h4>
+@if (orderStats != null)
+{
+    <ul>
+        <li>Общее количество заказов: @totalOrders</li>
+        @foreach (var status in Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>())
+        {
+            var count = orderStats.FirstOrDefault(s => s.Status == status)?.Count ?? 0;
+            <li>Количество заказов со статусом "@status.GetDescription()": @count</li>
+        }
+        @foreach (var priority in Enum.GetValues(typeof(OrderPriority)).Cast<OrderPriority>())
+        {
+            var count = orderPriorityStats.FirstOrDefault(p => p.Priority == priority)?.Count ?? 0;
+            <li>Количество заказов с приоритетом "@priority.GetDescription()": @count</li>
+        }
+    </ul>
+}
+else
+{
+    <p>Загрузка данных о заказах...</p>
+}
+
+<h4>Статистика по складу</h4>
+@if (materialStats != null) // Используем materialStats вместо warehouseStats
+{
+    <ul>
+        <li>Общее количество предметов на складе: @totalWarehouseQuantity</li>
+        <li>Количество уникальных предметов на складе: @uniqueWarehouseItems</li>
+    </ul>
+
+    <h5>Количество предметов по материалам</h5>
+    @if (materialStats.Any())
+    {
+        <ul>
+            @foreach (var material in materialStats)
+            {
+                <li>Материал "@(material.Material ?? "Не указано")": @material.TotalQuantity единиц</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>Нет данных о материалах на складе.</p>
+    }
+}
+else
+{
+    <p>Загрузка данных о складе...</p>
+}
+
+<h4>Дополнительная аналитика</h4>
+@if (additionalStatsLoaded) // Исправили на additionalStatsLoaded
+{
+    <ul>
+        <li>Количество уникальных авторов заказов: @uniqueAuthors</li>
+        <li>Количество уникальных наименований оснастки: @uniqueFurnitureNames</li>
+    </ul>
+}
+else
+{
+    <p>Загрузка дополнительной аналитики...</p>
+}
+
+@code {
+    private List<OrderStatusCount> orderStats;
+    private List<OrderPriorityCount> orderPriorityStats;
+    private List<MaterialQuantity> materialStats;
+    private List<WarehouseItem> warehouseStats; // Добавили поле
+    private int totalOrders;
+    private long totalWarehouseQuantity;
+    private int uniqueWarehouseItems;
+    private int uniqueAuthors;
+    private int uniqueFurnitureNames;
+    private double averageFurniturePerOrder;
+    private bool additionalStatsLoaded;
+
+    // Классы для хранения статистики
+    private class OrderStatusCount
+    {
+        public OrderStatus Status { get; set; }
+        public int Count { get; set; }
+    }
+
+    private class OrderPriorityCount
+    {
+        public OrderPriority Priority { get; set; }
+        public int Count { get; set; }
+    }
+
+    private class MaterialQuantity
+    {
+        public string Material { get; set; }
+        public long TotalQuantity { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrderStatistics();
+        await LoadWarehouseStatistics();
+        await LoadAdditionalStatistics();
+    }
+
+    private async Task LoadOrderStatistics()
+    {
+        try
+        {
+            var orders = await OrderService.GetAllOrders();
+            totalOrders = orders.Count;
+
+            // Статистика по статусам заказов
+            orderStats = orders
+                .GroupBy(o => o.OrderStatus)
+                .Select(g => new OrderStatusCount
+                    {
+                        Status = g.Key,
+                        Count = g.Count()
+                    })
+                .ToList();
+
+            // Статистика по приоритетам заказов
+            orderPriorityStats = orders
+                .GroupBy(o => o.OrderPriority)
+                .Select(g => new OrderPriorityCount
+                    {
+                        Priority = g.Key,
+                        Count = g.Count()
+                    })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Ошибка загрузки статистики заказов: {ex.Message}");
+            orderStats = new List<OrderStatusCount>();
+            orderPriorityStats = new List<OrderPriorityCount>();
+            totalOrders = 0;
+        }
+    }
+
+    private async Task LoadWarehouseStatistics()
+    {
+        try
+        {
+            warehouseStats = await OrderService.GetAllWarehouseItems();
+
+            // Общее количество предметов на складе
+            totalWarehouseQuantity = warehouseStats.Sum(w => w.Quantity);
+
+            // Количество уникальных предметов (по FurnitureNameId)
+            uniqueWarehouseItems = warehouseStats
+                .Select(w => w.FurnitureNameId)
+                .Distinct()
+                .Count();
+
+            // Количество предметов по материалам
+            materialStats = warehouseStats
+                .GroupBy(w => w.Material)
+                .Select(g => new MaterialQuantity
+                    {
+                        Material = g.Key,
+                        TotalQuantity = g.Sum(w => w.Quantity)
+                    })
+                .OrderBy(m => m.Material)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Ошибка загрузки статистики склада: {ex.Message}");
+            warehouseStats = new List<WarehouseItem>();
+            totalWarehouseQuantity = 0;
+            uniqueWarehouseItems = 0;
+            materialStats = new List<MaterialQuantity>();
+        }
+    }
+
+    private async Task LoadAdditionalStatistics()
+    {
+        try
+        {
+            // Количество уникальных авторов
+            var authors = await OrderService.GetAllAuthors();
+            uniqueAuthors = authors.Count;
+
+            // Количество уникальных наименований оснастки
+            var furnitureNames = await OrderService.GetAllFurnitureNames();
+            uniqueFurnitureNames = furnitureNames.Count;
+
+            // Среднее количество оснастки на заказ
+            var orders = await OrderService.GetAllOrders();
+            var totalFurnitureCount = orders
+                .Where(o => o.Furnitures != null)
+                .SelectMany(o => o.Furnitures)
+                .Sum(f => f.OrderQuantity);
+            averageFurniturePerOrder = orders.Any() ? (double)totalFurnitureCount / orders.Count : 0;
+
+            additionalStatsLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Ошибка загрузки дополнительной аналитики: {ex.Message}");
+            uniqueAuthors = 0;
+            uniqueFurnitureNames = 0;
+            averageFurniturePerOrder = 0;
+            additionalStatsLoaded = true;
+        }
+    }
+}
