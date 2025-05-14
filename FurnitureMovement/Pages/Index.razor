@@ -1,9 +1,114 @@
 ﻿@page "/"
+@using FurnitureMovement.Data
+@using FurnitureMovement.Services
+@using Blazorise
+@using Blazorise.Charts
+@inject IOrderService OrderService
+@inject NavigationManager NavigationManager
 
-<PageTitle>Меню</PageTitle>
+<PageTitle>Главная страница</PageTitle>
 
-<h1>Привет, мир!</h1>
+<h3>Главная страница</h3>
 
-Добро пожаловать в приложение!
+<div>
+    <Button Color="Color.Primary" Clicked="@(async () => await HandleRedraw())">Обновить график</Button>
+    <Button Color="Color.Primary" @onclick="NavigateToOrders">К заказам</Button>
+    <Button Color="Color.Primary" @onclick="NavigateToReport">К отчету</Button>
+    <Button Color="Color.Primary" @onclick="NavigateToWarehouse">К складу</Button>
+    <BarChart @ref="barChart" TItem="double?"/>
+</div>
 
-<SurveyPrompt Title="Как Блазор полезен для вас?" />
+@code {
+    private BarChart<double?>? barChart;
+    private List<OrderStatusCount> orderStats;
+
+    private class OrderStatusCount
+    {
+        public OrderStatus Status { get; set; }
+        public int Count { get; set; }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadOrderStatistics();
+            await HandleRedraw();
+        }
+    }
+
+    private async Task LoadOrderStatistics()
+    {
+        try
+        {
+            var orders = await OrderService.GetAllOrders();
+            if (orders == null || !orders.Any())
+            {
+                Console.WriteLine("Данные о заказах не загружены или пусты.");
+                orderStats = new List<OrderStatusCount>();
+                return;
+            }
+
+            orderStats = orders
+                .GroupBy(o => o.OrderStatus)
+                .Select(g => new OrderStatusCount
+                    {
+                        Status = g.Key,
+                        Count = g.Count()
+                    })
+                .ToList();
+            Console.WriteLine($"Загружено {orderStats.Count} статусов заказов.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки данных о заказах: {ex.Message}");
+            orderStats = new List<OrderStatusCount>();
+        }
+    }
+
+    private async Task HandleRedraw()
+    {
+        if (barChart == null) return;
+
+        await barChart.Clear();
+
+        // Получаем все возможные статусы из перечисления
+        var allStatuses = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>().ToList();
+        var labels = allStatuses.Select(s => s.GetDescription()).ToList();
+        var statusCounts = allStatuses.ToDictionary(s => s, s => 0);
+
+        // Заполняем словарь реальными значениями из orderStats
+        foreach (var stat in orderStats)
+        {
+            statusCounts[stat.Status] = stat.Count;
+        }
+
+        var data = allStatuses.Select(s => (double?)statusCounts[s]).ToList();
+
+        await barChart.AddLabelsDatasetsAndUpdate(labels, new BarChartDataset<double?>
+            {
+                Label = "Количество заказов",
+                Data = data,
+                BackgroundColor = new List<string>
+            {
+                ChartColor.FromRgba(30, 135, 73, 0.8f),  // #1E8749 с прозрачностью
+                ChartColor.FromRgba(39, 174, 96, 0.8f),  // #27AE60 с прозрачностью
+                ChartColor.FromRgba(46, 204, 113, 0.8f), // #2ECC71 с прозрачностью
+                ChartColor.FromRgba(20, 92, 47, 0.8f)    // #145C2F с прозрачностью
+            },
+                BorderColor = new List<string>
+            {
+                ChartColor.FromRgba(30, 135, 73, 1f),   // #1E8749
+                ChartColor.FromRgba(39, 174, 96, 1f),   // #27AE60
+                ChartColor.FromRgba(46, 204, 113, 1f),  // #2ECC71
+                ChartColor.FromRgba(20, 92, 47, 1f)     // #145C2F
+            },
+                BorderWidth = 1
+                //BarPercentage = 0.5  // Уменьшаем ширину столбцов (0.5 — половина ширины по умолчанию)
+            });
+    }
+
+    private void NavigateToOrders() => NavigationManager.NavigateTo("/OrderTable");
+    private void NavigateToReport() => NavigationManager.NavigateTo("/report");
+    private void NavigateToWarehouse() => NavigationManager.NavigateTo("/warehouse");
+}
