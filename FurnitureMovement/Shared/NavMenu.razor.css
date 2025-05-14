@@ -40,15 +40,15 @@
         line-height: 3rem;
     }
 
-.nav-item ::deep a.active {
-    background-color: rgba(255,255,255,0.25);
-    color: white;
-}
+        .nav-item ::deep a.active {
+            background-color: rgba(255,255,255,0.25);
+            color: white;
+        }
 
-.nav-item ::deep a:hover {
-    background-color: rgba(255,255,255,0.1);
-    color: white;
-}
+        .nav-item ::deep a:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
 
 @media (min-width: 641px) {
     .navbar-toggler {
@@ -59,10 +59,52 @@
         /* Never collapse the sidebar for wide screens */
         display: block;
     }
-    
+
     .nav-scrollable {
         /* Allow sidebar to scroll for tall menus */
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
     }
+}
+
+/* Изумрудно-зелёная цветовая схема */
+.navbar-toggler {
+    background-color: rgba(46, 204, 113, 0.2);
+}
+
+.top-row {
+    background-color: #145C2F;
+}
+
+.nav-item ::deep a {
+    color: #E8F5E9;
+    background-color: transparent;
+    border-radius: 4px;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    line-height: 3rem;
+}
+
+    .nav-item ::deep a.active {
+        background-color: #1E8749;
+        color: #FFFFFF;
+    }
+
+    .nav-item ::deep a:hover {
+        background-color: #1E8749;
+        color: #FFFFFF;
+    }
+
+/* Градиент для бокового меню: сверху тёмный #145C2F, снизу светлее #1E8749 */
+.collapse {
+    background: linear-gradient(to bottom, #145C2F, #1E8749);
+}
+
+.nav-scrollable {
+    background: linear-gradient(to bottom, #145C2F, #1E8749);
+}
+
+body .sidebar {
+    background: linear-gradient(to bottom, #145C2F, #1E8749) !important;
 }
