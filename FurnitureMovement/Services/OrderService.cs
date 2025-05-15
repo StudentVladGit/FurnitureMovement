@@ -64,62 +64,12 @@ public class OrderService : IOrderService
         foreach (var furniture in newOrderFurnitures)
         {
             furniture.Order = newOrder;
-            furniture.FurnitureName = null; // Убедимся, что FurnitureName не добавляется
+            furniture.FurnitureName = null;
         }
 
         await context.Orders.AddAsync(newOrder);
         await context.SaveChangesAsync();
     }
-
-    //public async Task UpdateOrder(Order updatedOrder)
-    //{
-    //    using var context = _myFactory.CreateDbContext();
-
-    //    var existingOrder = await context.Orders
-    //        .Include(o => o.OrderAuthor)
-    //        .Include(o => o.Furnitures)
-    //        .FirstOrDefaultAsync(o => o.ID == updatedOrder.ID);
-
-    //    if (existingOrder == null) return;
-
-    //    var oldStatus = existingOrder.OrderStatus;
-
-    //    existingOrder.OrderNumber = updatedOrder.OrderNumber;
-    //    existingOrder.OrderStatus = updatedOrder.OrderStatus;
-    //    existingOrder.OrderPriority = updatedOrder.OrderPriority;
-    //    existingOrder.AdmissionDate = updatedOrder.AdmissionDate;
-    //    existingOrder.OrderAuthorID = updatedOrder.OrderAuthorID;
-
-    //    // Удаляем старые оснастки
-    //    if (existingOrder.Furnitures != null && existingOrder.Furnitures.Any())
-    //    {
-    //        context.Furnitures.RemoveRange(existingOrder.Furnitures);
-    //    }
-
-    //    // Добавляем новые оснастки
-    //    if (updatedOrder.Furnitures != null && updatedOrder.Furnitures.Any())
-    //    {
-    //        foreach (var furniture in updatedOrder.Furnitures)
-    //        {
-    //            var orderNameExists = await context.FurnitureNames.AnyAsync(x => x.ID == furniture.FurnitureNameID);
-    //            if (!orderNameExists)
-    //                throw new ArgumentException($"Наименование с ID {furniture.FurnitureNameID} не существует");
-
-    //            furniture.OrderID = existingOrder.ID;
-    //            furniture.FurnitureName = null; 
-    //            context.Furnitures.Add(furniture);
-    //        }
-    //    }
-
-    //    if (oldStatus != existingOrder.OrderStatus)
-    //    {
-    //        _notificationService.AddNotification(
-    //            $"{existingOrder.OrderNumber} изменил статус на {existingOrder.OrderStatus} в {DateTime.Now:HH:mm}",
-    //            existingOrder.OrderStatus);
-    //    }
-
-    //    await context.SaveChangesAsync();
-    //}
 
     public async Task UpdateOrder(Order updatedOrder)
     {
