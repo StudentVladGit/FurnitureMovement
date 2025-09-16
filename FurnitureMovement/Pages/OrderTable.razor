@@ -6,10 +6,17 @@
 @using Blazorise.Icons.FontAwesome
 @inject IOrderService OrderService
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 
 <PageTitle>Управление</PageTitle>
 
 <h1>Таблица заказов оснастки</h1>
+
+<!-- ПОИСК ЗАКАЗА -->
+<Field>
+    <FieldLabel>Поиск по любому полю</FieldLabel>
+    <TextEdit @bind-Text="searchTerm" Placeholder="Введите текст для поиска" Debounce="true" DebounceInterval="300" />
+</Field>
 
 <!-- КНОПКА "ДОБАВИТЬ" -->
 <Button Color="Color.Primary" @onclick="ShowAddModal">Добавить</Button>
@@ -22,33 +29,38 @@ else
 {
     <!-- ТАБЛИЦА ЗАКАЗА ОСНАСТКИ -->
     <DataGrid TItem="Order"
-              Data="@orders"
+              Data="@filteredOrders"
               ShowPager="true">
         <DataGridColumns>
-            <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" />
-            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер">
+            <DataGridColumn TItem="Order" Field="@nameof(Order.ID)" Caption="ID" Sortable="true" />
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderNumber)" Caption="Номер" Sortable="true">
                 <DisplayTemplate Context="order">
                     <a href="javascript:void(0)" @onclick="() => ShowFurnituresModal(order)">@order.OrderNumber</a>
                 </DisplayTemplate>
             </DataGridColumn>
-            <DataGridColumn TItem="Order" Caption="Статус">
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderStatus)" Caption="Статус" Sortable="true">
                 <DisplayTemplate Context="order">
                     @order.OrderStatus.GetDescription()
                 </DisplayTemplate>
             </DataGridColumn>
-            <DataGridColumn TItem="Order" Caption="Приоритет">
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderPriority)" Caption="Приоритет" Sortable="true">
                 <DisplayTemplate Context="order">
                     @order.OrderPriority.GetDescription()
                 </DisplayTemplate>
             </DataGridColumn>
-            <DataGridColumn TItem="Order" Caption="Дата">
+            <DataGridColumn TItem="Order" Field="@nameof(Order.AdmissionDate)" Caption="Дата" Sortable="true">
                 <DisplayTemplate Context="order">
                     @(order.AdmissionDate.ToString("dd/MM/yyyy"))
                 </DisplayTemplate>
             </DataGridColumn>
-            <DataGridColumn TItem="Order" Caption="Автор">
+            <DataGridColumn TItem="Order" Field="@nameof(Order.OrderAuthor)" Caption="Автор" Sortable="false">
                 <DisplayTemplate Context="order">
                     @(order.OrderAuthor?.Name ?? "Не указан")
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="Order" Caption="Подразделение" Sortable="false">
+                <DisplayTemplate Context="order">
+                    @(order.OrderAuthor?.Division.GetDescription() ?? "Не указано")
                 </DisplayTemplate>
             </DataGridColumn>
             <DataGridColumn TItem="Order" Caption="Действия" Sortable="false">
@@ -443,10 +455,12 @@ else
     private List<FurnitureName> FurnitureNames = new();
     private List<OrderAuthor> authors = new();
 
+    private string searchTerm = "";
+
     private Order newOrder = new()
         {
             OrderStatus = OrderStatus.Generated,
-            OrderPriority = OrderPriority.Usual,
+            OrderPriority = OrderPriority.Standart,
             AdmissionDate = DateTime.Today
         };
     private List<Furniture> newFurnitures = new();
@@ -518,7 +532,7 @@ else
         newOrder = new Order
             {
                 OrderStatus = OrderStatus.Generated,
-                OrderPriority = OrderPriority.Usual,
+                OrderPriority = OrderPriority.Standart,
                 AdmissionDate = DateTime.Today
             };
 
@@ -730,4 +744,13 @@ else
         return name?.Name ?? "Неизвестно";
     }
     <!-- ПОЛУЧИТЬ НАИМЕНОВАНИЕ ОСНАСТКИ -->
+    private List<Order> filteredOrders => string.IsNullOrWhiteSpace(searchTerm)
+        ? orders
+        : orders.Where(o =>
+            (o.OrderNumber?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (o.OrderStatus.GetDescription()?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (o.OrderPriority.GetDescription()?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (o.AdmissionDate.ToString("dd/MM/yyyy")?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (o.OrderAuthor?.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (o.OrderAuthor?.Division.GetDescription()?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 }

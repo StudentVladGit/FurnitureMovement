@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20250503130257_InitialCreate")]
+    [Migration("20250615100414_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -63,9 +63,11 @@ namespace FurnitureMovement.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Drawing")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Image")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Material")
@@ -132,6 +134,9 @@ namespace FurnitureMovement.Migrations
                     b.Property<int>("DeleteIndicator")
                         .HasColumnType("integer");
 
+                    b.Property<long>("Division")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -154,7 +159,6 @@ namespace FurnitureMovement.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Drawing")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("FurnitureName")
@@ -165,11 +169,9 @@ namespace FurnitureMovement.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Image")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Material")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<long>("Quantity")

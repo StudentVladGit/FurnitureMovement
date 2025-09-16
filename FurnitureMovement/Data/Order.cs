@@ -14,32 +14,32 @@ namespace FurnitureMovement.Data
         [Description("Оформлен")]
         Decorated = 1,
 
-        [Description("В Процессе Изготовления")]
+        [Description("В процессе изготовления")]
         InThePreparationProcess = 2,
 
         [Description("Изготовлено")]
         Manufactured = 3,
 
+        [Description("Помещен на склад")]
+        ToWarehouse = 4,
+
         [Description("Выполнен")]
-        Completed = 4,
+        Completed = 5,
 
         [Description("Отменен")]
-        Cancelled = 5
+        Cancelled = 6
     }
 
     public enum OrderPriority : long
     {
-        [Description("Обычный")]
-        Usual = 0,
+        [Description("Стандартный")]
+        Standart = 0,
 
-        [Description("Важный")]
-        Important = 1,
+        [Description("Высокий")]
+        High = 1,
 
-        [Description("Быстрый")]
-        Fast = 2,
-
-        [Description("Срочный")]
-        Emergency = 3
+        [Description("Критический")]
+        Critical = 2
     }
     public class Order
     {

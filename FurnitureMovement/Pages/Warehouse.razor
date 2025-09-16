@@ -10,26 +10,33 @@
 
 <h3>Учет оснастки на складе</h3>
 
+<!-- ПОИСК ОСНАСТКИ -->
+<Field>
+    <FieldLabel>Поиск по наименованию, количеству, дате или материалу</FieldLabel>
+    <TextEdit @bind-Text="searchTerm" Placeholder="Введите текст для поиска" Debounce="true" DebounceInterval="300" />
+</Field>
+
 <DataGrid TItem="WarehouseItem"
-          Data="@warehouseItems"
+          Data="@filteredWarehouseItems"
           ShowPager="true"
           PageSize="10"
-@ref="dataGrid">
+@ref="dataGrid"
+          Sortable="true">
     <DataGridColumns>
-        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.ID)" Caption="ID" />
-        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.FurnitureName)" Caption="Наименование оснастки" />
-        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.Quantity)" Caption="Количество" />
-        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.AdmissionDate)" Caption="Дата поступления">
+        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.ID)" Caption="ID" Sortable="true" />
+        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.FurnitureName)" Caption="Наименование оснастки" Sortable="true" />
+        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.Quantity)" Caption="Количество" Sortable="true" />
+        <DataGridColumn TItem="WarehouseItem" Field="@nameof(WarehouseItem.AdmissionDate)" Caption="Дата поступления" Sortable="true">
             <DisplayTemplate Context="item">
                 @item.AdmissionDate.ToString("dd/MM/yyyy")
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn TItem="WarehouseItem" Caption="Материал">
+        <DataGridColumn TItem="WarehouseItem" Caption="Материал" Sortable="true">
             <DisplayTemplate Context="item">
                 @(item.Material ?? "Не указано")
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn TItem="WarehouseItem" Caption="Чертеж">
+        <DataGridColumn TItem="WarehouseItem" Caption="Чертеж" Sortable="false">
             <DisplayTemplate Context="item">
                 @if (!string.IsNullOrEmpty(item.Drawing) && item.Drawing != "Не указано")
                 {
@@ -43,7 +50,7 @@
                 }
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn TItem="WarehouseItem" Caption="Изображение">
+        <DataGridColumn TItem="WarehouseItem" Caption="Изображение" Sortable="false">
             <DisplayTemplate Context="item">
                 @if (!string.IsNullOrEmpty(item.Image) && item.Image != "Не указано")
                 {
@@ -148,6 +155,7 @@
     private int itemIdToRemove;
     private long availableQuantity;
     private long quantityToRemove;
+    private string searchTerm = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -214,4 +222,13 @@
         drawingModalRef.Hide();
         currentDrawing = "";
     }
+
+    private List<WarehouseItem> filteredWarehouseItems => string.IsNullOrWhiteSpace(searchTerm)
+        ? warehouseItems
+        : warehouseItems.Where(item =>
+            //(item.ID.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+            (item.FurnitureName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (item.Quantity.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+            (item.AdmissionDate.ToString("dd/MM/yyyy").Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+            (item.Material?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 }

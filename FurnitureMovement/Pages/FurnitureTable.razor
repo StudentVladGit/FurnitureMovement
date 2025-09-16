@@ -11,17 +11,24 @@
 
 <h3>Таблица списка оснастки</h3>
 
+<!-- ПОИСК ОСНАСТКИ -->
+<Field>
+    <FieldLabel>Поиск по наименованию, материалу или времени производства</FieldLabel>
+    <TextEdit @bind-Text="searchTerm" Placeholder="Введите текст для поиска" Debounce="true" DebounceInterval="300" />
+</Field>
+
 <Button Color="Color.Primary" @onclick="ShowAddModal">Добавить оснастку</Button>
 
 <DataGrid TItem="FurnitureName"
-          Data="@FurnitureNames"
+          Data="@filteredFurnitureNames"
           ShowPager="true"
-          PageSize="10">
+          PageSize="10"
+          Sortable="true">
     <DataGridColumns>
         <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.ID)" Caption="ID" />
-        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.Name)" Caption="Наименование" />
-        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.Material)" Caption="Материал" />
-        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.ProductionTime)" Caption="Время производства" />
+        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.Name)" Caption="Наименование" Sortable="true" />
+        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.Material)" Caption="Материал" Sortable="true" />
+        <DataGridColumn TItem="FurnitureName" Field="@nameof(FurnitureName.ProductionTime)" Caption="Время производства" Sortable="true" />
         <DataGridColumn TItem="FurnitureName" Caption="Чертеж">
             <DisplayTemplate Context="furnitureName">
                 @if (furnitureName.Drawing != "Не указано")
@@ -160,6 +167,7 @@
     private bool isEditing = false;
     private string currentImage = "";
     private string currentDrawing = "";
+    private string searchTerm = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -274,4 +282,11 @@
         drawingModalRef.Hide();
         currentDrawing = "";
     }
+
+    private List<FurnitureName> filteredFurnitureNames => string.IsNullOrWhiteSpace(searchTerm)
+        ? FurnitureNames
+        : FurnitureNames.Where(fn =>
+            (fn.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (fn.Material?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (fn.ProductionTime?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 }

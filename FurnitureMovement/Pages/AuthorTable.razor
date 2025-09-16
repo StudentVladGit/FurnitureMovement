@@ -9,17 +9,29 @@
 
 <PageTitle>Список авторов</PageTitle>
 
-<h3>Талица авторов заказов</h3>
+<h3>Таблица авторов заказов</h3>
+
+<!-- ПОИСК АВТОРОВ -->
+<Field>
+    <FieldLabel>Поиск по ФИО или подразделению</FieldLabel>
+    <TextEdit @bind-Text="searchTerm" Placeholder="Введите текст для поиска" Debounce="true" DebounceInterval="300" />
+</Field>
 
 <Button Color="Color.Primary" @onclick="ShowAddModal">Добавить автора</Button>
 
 <DataGrid TItem="OrderAuthor"
-          Data="@authors"
+          Data="@filteredAuthors"
           ShowPager="true"
-          PageSize="10">
+          PageSize="10"
+          Sortable="true">
     <DataGridColumns>
         <DataGridColumn TItem="OrderAuthor" Field="@nameof(OrderAuthor.ID)" Caption="ID" />
-        <DataGridColumn TItem="OrderAuthor" Field="@nameof(OrderAuthor.Name)" Caption="ФИО автора" />
+        <DataGridColumn TItem="OrderAuthor" Field="@nameof(OrderAuthor.Name)" Caption="ФИО сотрудника" Sortable="true" />
+        <DataGridColumn TItem="OrderAuthor" Field="@nameof(OrderAuthor.Division)" Caption="Подразделение" Sortable="false">
+            <DisplayTemplate Context="author">
+                @author.Division.GetDescription()
+            </DisplayTemplate>
+        </DataGridColumn>
         <DataGridColumn TItem="OrderAuthor" Caption="Действия" Sortable="false">
             <DisplayTemplate Context="item">
                 <div class="d-flex justify-content-end gap-2">
@@ -47,6 +59,15 @@
                 <FieldLabel>ФИО автора</FieldLabel>
                 <TextEdit @bind-Text="currentAuthor.Name" />
             </Field>
+            <Field>
+                <FieldLabel>Подразделение</FieldLabel>
+                <Select TValue="Division" @bind-SelectedValue="currentAuthor.Division">
+                    @foreach (Division div in Enum.GetValues(typeof(Division)))
+                    {
+                        <SelectItem TValue="Division" Value="@div">@div.GetDescription()</SelectItem>
+                    }
+                </Select>
+            </Field>
         </ModalBody>
         <ModalFooter>
             <Button Color="Color.Secondary" @onclick="HideAddModal">Отмена</Button>
@@ -60,6 +81,7 @@
     private List<OrderAuthor> authors = new();
     private OrderAuthor currentAuthor = new();
     private bool isEditing = false;
+    private string searchTerm = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -112,12 +134,16 @@
         {
             await JSRuntime.InvokeVoidAsync("alert", ex.Message);
         }
-
     }
 
     private void EditItem(OrderAuthor item)
     {
-        currentAuthor = new OrderAuthor { ID = item.ID, Name = item.Name };
+        currentAuthor = new OrderAuthor
+            {
+                ID = item.ID,
+                Name = item.Name,
+                Division = item.Division // Копируем значение Division
+            };
         isEditing = true;
         addModalRef.Show();
     }
@@ -136,7 +162,11 @@
         {
             await JSRuntime.InvokeVoidAsync("alert", ex.Message);
         }
-
-
     }
+
+    private List<OrderAuthor> filteredAuthors => string.IsNullOrWhiteSpace(searchTerm)
+        ? authors
+        : authors.Where(a =>
+            (a.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (a.Division.GetDescription()?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 }

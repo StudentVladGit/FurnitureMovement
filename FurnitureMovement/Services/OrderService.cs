@@ -119,8 +119,9 @@ public class OrderService : IOrderService
                     }
                 }
 
-                // Если статус изменился на Completed, добавляем данные на склад
-                if (oldStatus != OrderStatus.Completed && updatedOrder.OrderStatus == OrderStatus.Completed)
+                // Если статус изменился на Completed или ToWarehouse, добавляем данные на склад
+                if (oldStatus != OrderStatus.Completed && updatedOrder.OrderStatus == OrderStatus.Completed || 
+                    oldStatus != OrderStatus.ToWarehouse && updatedOrder.OrderStatus == OrderStatus.ToWarehouse)
                 {
                     foreach (var furniture in updatedOrder.Furnitures)
                     {
@@ -281,6 +282,7 @@ public class OrderService : IOrderService
             throw new ArgumentException("Автор с таким именем уже существует");
 
         existing.Name = author.Name;
+        existing.Division = author.Division;
         await context.SaveChangesAsync();
     }
 

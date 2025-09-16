@@ -21,8 +21,8 @@ namespace FurnitureMovement.Migrations
                     Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Material = table.Column<string>(type: "text", nullable: true),
                     ProductionTime = table.Column<string>(type: "text", nullable: true),
-                    Drawing = table.Column<string>(type: "text", nullable: true),
-                    Image = table.Column<string>(type: "text", nullable: true),
+                    Drawing = table.Column<string>(type: "text", nullable: false),
+                    Image = table.Column<string>(type: "text", nullable: false),
                     DeleteIndicator = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -37,7 +37,8 @@ namespace FurnitureMovement.Migrations
                     ID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    DeleteIndicator = table.Column<int>(type: "integer", nullable: false)
+                    DeleteIndicator = table.Column<int>(type: "integer", nullable: false),
+                    Division = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -54,9 +55,9 @@ namespace FurnitureMovement.Migrations
                     FurnitureNameId = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<long>(type: "bigint", nullable: false),
                     AdmissionDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    Material = table.Column<string>(type: "text", nullable: false),
-                    Drawing = table.Column<string>(type: "text", nullable: false),
-                    Image = table.Column<string>(type: "text", nullable: false)
+                    Material = table.Column<string>(type: "text", nullable: true),
+                    Drawing = table.Column<string>(type: "text", nullable: true),
+                    Image = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
