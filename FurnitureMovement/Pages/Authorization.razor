@@ -1,0 +1,58 @@
+﻿@page "/login"
+@using FurnitureMovement.Services
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<Layout>
+    <Card Class="m-auto mt-5 p-4 shadow-lg" Style="max-width:400px;">
+        <CardHeader>
+            <h4>Вход в систему</h4>
+        </CardHeader>
+        <CardBody>
+            <ValidationSummary />
+            <TextEdit @bind-Text="username" Placeholder="Логин" />
+            <TextEdit @bind-Text="password" Placeholder="Пароль" TextMode="password" />
+
+            <Button Color="Color.Primary" Class="mt-3" Clicked="OnLogin">Войти</Button>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <p class="text-danger mt-2">@message</p>
+            }
+        </CardBody>
+    </Card>
+</Layout>
+
+@code {
+    private string username = string.Empty;
+    private string password = string.Empty;
+    private string? message;
+
+    private async Task OnLogin()
+    {
+        try
+        {
+            if (AuthenticationStateProvider is CustomAuthenticationStateProvider customProvider)
+            {
+                await customProvider.LoginAsync(username, password);
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                if (authState.User?.Identity?.IsAuthenticated == true)
+                {
+                    NavigationManager.NavigateTo("/");
+                }
+                else
+                {
+                    message = "Неверный логин или пароль!";
+                }
+            }
+            else
+            {
+                message = "Ошибка провайдера авторизации.";
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Ошибка: {ex.Message}";
+        }
+    }
+}

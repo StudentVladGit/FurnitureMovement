@@ -8,6 +8,7 @@ using Blazorise;
 using Blazorise.Bootstrap;
 using Blazorise.Icons.FontAwesome;
 using Blazorise.Bootstrap5;
+using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,8 @@ builder.Services.AddDbContextFactory<OrderContext>(options => options.UseNpgsql(
 
 builder.Services.AddScoped<IOrderService, OrderService>(); //Строка 1
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<AuthorizationService>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
 var app = builder.Build();
 

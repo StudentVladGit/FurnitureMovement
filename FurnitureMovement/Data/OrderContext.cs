@@ -8,12 +8,12 @@ namespace FurnitureMovement.Data
         public OrderContext(DbContextOptions<OrderContext> options) : base(options)
         {
         }
-
         public DbSet<Order> Orders { get; set; }
         public DbSet<Furniture> Furnitures { get; set; }
         public DbSet<FurnitureName> FurnitureNames { get; set; }
         public DbSet<OrderAuthor> OrderAuthors { get; set; }
         public DbSet<WarehouseItem> WarehouseItems { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
