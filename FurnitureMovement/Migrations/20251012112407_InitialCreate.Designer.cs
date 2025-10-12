@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20250930053057_InitialCreate")]
+    [Migration("20251012112407_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -142,6 +142,9 @@ namespace FurnitureMovement.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
                     b.HasKey("ID");
 
                     b.ToTable("OrderAuthors", (string)null);
@@ -161,6 +164,10 @@ namespace FurnitureMovement.Migrations
                     b.Property<bool>("IsLocked")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("OrderAuthorId")
+                        .IsRequired()
+                        .HasColumnType("integer");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
@@ -170,6 +177,9 @@ namespace FurnitureMovement.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderAuthorId")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
@@ -239,9 +249,26 @@ namespace FurnitureMovement.Migrations
                     b.Navigation("OrderAuthor");
                 });
 
+            modelBuilder.Entity("FurnitureMovement.Data.User", b =>
+                {
+                    b.HasOne("FurnitureMovement.Data.OrderAuthor", "OrderAuthor")
+                        .WithOne("User")
+                        .HasForeignKey("FurnitureMovement.Data.User", "OrderAuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrderAuthor");
+                });
+
             modelBuilder.Entity("FurnitureMovement.Data.Order", b =>
                 {
                     b.Navigation("Furnitures");
+                });
+
+            modelBuilder.Entity("FurnitureMovement.Data.OrderAuthor", b =>
+                {
+                    b.Navigation("User")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

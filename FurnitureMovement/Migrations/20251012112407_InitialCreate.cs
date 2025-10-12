@@ -38,27 +38,12 @@ namespace FurnitureMovement.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     DeleteIndicator = table.Column<int>(type: "integer", nullable: false),
-                    Division = table.Column<long>(type: "bigint", nullable: false)
+                    Division = table.Column<long>(type: "bigint", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OrderAuthors", x => x.ID);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
-                    Username = table.Column<string>(type: "text", nullable: false),
-                    PasswordHash = table.Column<string>(type: "text", nullable: false),
-                    FailedAttempts = table.Column<int>(type: "integer", nullable: false),
-                    IsLocked = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -105,6 +90,29 @@ namespace FurnitureMovement.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                    Username = table.Column<string>(type: "text", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: false),
+                    FailedAttempts = table.Column<int>(type: "integer", nullable: false),
+                    IsLocked = table.Column<bool>(type: "boolean", nullable: false),
+                    OrderAuthorId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Users_OrderAuthors_OrderAuthorId",
+                        column: x => x.OrderAuthorId,
+                        principalTable: "OrderAuthors",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Furnitures",
                 columns: table => new
                 {
@@ -145,6 +153,12 @@ namespace FurnitureMovement.Migrations
                 name: "IX_Orders_OrderAuthorID",
                 table: "Orders",
                 column: "OrderAuthorID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_OrderAuthorId",
+                table: "Users",
+                column: "OrderAuthorId",
+                unique: true);
         }
 
         /// <inheritdoc />

@@ -1,36 +1,38 @@
 ﻿@inherits LayoutComponentBase
-
-
 <PageTitle>Движение оснастки</PageTitle>
-
 <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
-
     <main>
         <div class="top-row px-4">
-            <button class="btn btn-primary notification-btn" @onclick="ToggleNotificationPanel">
-                <i class="fas fa-bell"></i>
-                @if (unreadCount > 0)
-                {
-                    <span class="badge bg-danger">@unreadCount</span>
-                }
-            </button>
+            @if (IsAuthenticated)
+            {
+                <button class="btn btn-primary notification-btn" @onclick="ToggleNotificationPanel">
+                    <i class="fas fa-bell"></i>
+                    @if (unreadCount > 0)
+                    {
+                        <span class="badge bg-danger">@unreadCount</span>
+                    }
+                </button>
+            }
+            @if (!IsAuthenticated)
+            {
+                <button class="btn btn-primary ml-3" @onclick="NavigateToLogin">Авторизоваться</button>
+            }
             <a href="https://docs.microsoft.com/aspnet/" target="_blank">О нас</a>
-        </div>
 
+        </div>
         <article class="content px-4">
             @Body
         </article>
     </main>
 </div>
-
 <NotificationPanel @ref="notificationPanel" />
-
 @code {
     private NotificationPanel notificationPanel = new NotificationPanel();
     private int unreadCount = 0;
+    private bool IsAuthenticated => (AuthenticationStateProvider.GetAuthenticationStateAsync().Result?.User?.Identity?.IsAuthenticated ?? false);
 
     private void ToggleNotificationPanel()
     {
@@ -38,4 +40,15 @@
         unreadCount = 0; // Сбрасываем счетчик при открытии
         StateHasChanged();
     }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; } = default!;
+
+    [Inject]
+    public AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
 }

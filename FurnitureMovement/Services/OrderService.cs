@@ -2,6 +2,7 @@
 using FurnitureMovement.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.InteropServices;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FurnitureMovement.Services;
 
@@ -34,6 +35,7 @@ public class OrderService : IOrderService
 {
     private IDbContextFactory<OrderContext> _myFactory;
     private readonly NotificationService _notificationService;
+    private readonly AuthenticationStateProvider _authenticationStateProvider;
 
     // Пороговое значение для разового списания
     private const long SingleRemovalThreshold = 50; // Порог для одного списания

@@ -8,6 +8,7 @@
 @inject IOrderService OrderService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider // Добавлено
 
 <PageTitle>Управление</PageTitle>
 
@@ -525,7 +526,7 @@ else
     }
 
     <!-- ПОКАЗАТЬ МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ -->
-    private void ShowAddModal()
+    private async Task ShowAddModal()
     {
         newFurnitures = new List<Furniture>();
         AddNewFurniture();
@@ -536,6 +537,22 @@ else
                 OrderPriority = OrderPriority.Standart,
                 AdmissionDate = DateTime.Today
             };
+
+        // Получаем авторизованного пользователя
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var username = authState.User?.Identity?.Name;
+        if (!string.IsNullOrEmpty(username))
+        {
+                var user = authors.FirstOrDefault(a => a.Name == username);
+                if (user == null)
+                {
+                    // Если автора нет в списке, добавляем его (предполагается, что OrderService.GetAllAuthors() уже загружен)
+                    user = new OrderAuthor { Name = username, Division = 0 }; // Установите Division по умолчанию
+                    await OrderService.AddAuthor(user);
+                    authors = await OrderService.GetAllAuthors(); // Обновляем список авторов
+                }
+                newOrder.OrderAuthorID = user.ID;
+        }
 
         addModalRef.Show();
     }
@@ -623,12 +640,12 @@ else
             return;
         }
 
+        // Проверка автора остается, но теперь значение может быть > 0 из-за автоматической подстановки
         if (newOrder.OrderAuthorID <= 0)
         {
             await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите автора!");
             return;
         }
-
         try
         {
             newOrder.Furnitures = newFurnitures;
@@ -637,7 +654,6 @@ else
                 furniture.Order = newOrder;
                 furniture.FurnitureName = null;
             }
-
             await OrderService.CreateOrder(newOrder, newFurnitures);
             await Refresh();
             await addModalRef.Hide();

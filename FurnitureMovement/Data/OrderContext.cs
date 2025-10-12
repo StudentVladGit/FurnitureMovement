@@ -43,6 +43,13 @@ namespace FurnitureMovement.Data
                 .HasForeignKey(f => f.FurnitureNameID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Связь User-OrderAuthor (один-к-одному)
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.OrderAuthor)
+                .WithOne(oa => oa.User)
+                .HasForeignKey<User>(u => u.OrderAuthorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Настройка имен таблиц (соответствует вашим предпочтениям)
             modelBuilder.Entity<Furniture>().ToTable("Furnitures");
             modelBuilder.Entity<FurnitureName>().ToTable("FurnitureNames");

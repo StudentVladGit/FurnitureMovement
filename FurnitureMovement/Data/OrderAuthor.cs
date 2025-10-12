@@ -6,15 +6,6 @@ namespace FurnitureMovement.Data
 {
     public enum Division: long
     {
-        //[Description("ОАСУ")]
-        //OACY = 0,
-
-        //[Description("ОИТ")]
-        //OIT = 1,
-
-        //[Description("Отдел безопасности")]
-        //Security = 2
-
         [Description("Отдел разработки и проектирования")]
         Div1 = 0,
 
@@ -41,5 +32,10 @@ namespace FurnitureMovement.Data
         public string? Name { get; set; }
         public int DeleteIndicator { get; set; } = 0;
         public Division Division { get; set; }
+
+        // Added for one-to-one relationship with User
+        public int UserId { get; set; } // Foreign key
+        [ForeignKey("UserId")]
+        public virtual User User { get; set; } // Navigation property
     }
 }
