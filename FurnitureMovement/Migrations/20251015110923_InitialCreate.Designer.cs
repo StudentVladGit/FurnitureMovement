@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20251012112407_InitialCreate")]
+    [Migration("20251015110923_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -171,6 +171,9 @@ namespace FurnitureMovement.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Username")
                         .IsRequired()

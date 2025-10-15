@@ -99,6 +99,7 @@ namespace FurnitureMovement.Migrations
                     PasswordHash = table.Column<string>(type: "text", nullable: false),
                     FailedAttempts = table.Column<int>(type: "integer", nullable: false),
                     IsLocked = table.Column<bool>(type: "boolean", nullable: false),
+                    Role = table.Column<int>(type: "integer", nullable: false),
                     OrderAuthorId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>

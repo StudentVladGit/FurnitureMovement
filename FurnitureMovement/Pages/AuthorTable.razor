@@ -18,7 +18,15 @@
     <TextEdit @bind-Text="searchTerm" Placeholder="Введите текст для поиска" Debounce="true" DebounceInterval="300" />
 </Field>
 
-<Button Color="Color.Primary" @onclick="ShowAddModal">Добавить автора</Button>
+<!-- КНОПКА "ДОБАВИТЬ" — только для админа -->
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <Button Color="Color.Primary" @onclick="ShowAddModal">Добавить автора</Button>
+    </Authorized>
+    <NotAuthorized>
+        <p class="text-muted">Доступ к добавлению оснастки запрещен (требуется роль Администратор).</p>
+    </NotAuthorized>
+</AuthorizeView>
 
 <DataGrid TItem="OrderAuthor"
           Data="@filteredAuthors"
@@ -36,12 +44,19 @@
         <DataGridColumn TItem="OrderAuthor" Caption="Действия" Sortable="false">
             <DisplayTemplate Context="item">
                 <div class="d-flex justify-content-end gap-2">
-                    <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(item)">
-                        ✏️
-                    </Button>
-                    <Button Color="Color.Danger" Size="Size.Small" @onclick="() => DeleteItem(item)">
-                        🗑️
-                    </Button>
+                    <AuthorizeView Roles="Admin">
+                        <Authorized>
+                            <Button Color="Color.Primary" Size="Size.Small" @onclick="() => EditItem(item)">
+                                ✏️
+                            </Button>
+                            <Button Color="Color.Danger" Size="Size.Small" @onclick="() => DeleteItem(item)">
+                             🗑️
+                            </Button>
+                        </Authorized>
+                        <NotAuthorized>
+                            <span class="text-muted">Нет разрешения</span>
+                        </NotAuthorized>
+                    </AuthorizeView>
                 </div>
             </DisplayTemplate>
         </DataGridColumn>

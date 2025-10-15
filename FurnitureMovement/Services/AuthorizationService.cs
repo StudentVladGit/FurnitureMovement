@@ -39,5 +39,10 @@ namespace FurnitureMovement.Services
                 return (false, "Неверный пароль!");
             }
         }
+
+        public async Task<User> GetUserByUsernameAsync(string username)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+        }
     }
 }

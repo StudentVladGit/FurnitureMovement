@@ -2,6 +2,13 @@
 
 namespace FurnitureMovement.Data
 {
+    public enum UserRole
+    {
+        //[Display(Name = "Пользователь")]
+        User = 0,
+        //[Display(Name = "Администратор")]
+        Admin = 1
+    }
     public class User
     {
         public int Id { get; set; }
@@ -9,6 +16,7 @@ namespace FurnitureMovement.Data
         public string PasswordHash { get; set; } = string.Empty;
         public int FailedAttempts { get; set; }
         public bool IsLocked { get; set; }
+        public UserRole Role { get; set; } = UserRole.User; // По умолчанию - Пользователь
 
         // Added for one-to-one relationship with OrderAuthor
         public int? OrderAuthorId { get; set; } // Foreign key (nullable if no author yet)

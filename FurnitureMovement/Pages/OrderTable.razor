@@ -250,12 +250,20 @@ else
 
             <Field>
                 <FieldLabel>Статус</FieldLabel>
+                @if (IsAdmin)
+                {
                 <Select TValue="OrderStatus" @bind-SelectedValue="newOrder.OrderStatus">
                     @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
                     {
                         <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
                     }
-                </Select>
+                    </Select>
+                }
+                else
+                {
+                    <TextEdit Text="@newOrder.OrderStatus.GetDescription()" ReadOnly />
+                    <FieldHelp>Статус фиксирован для пользователя: Сформирован</FieldHelp>
+                }
             </Field>
 
             <Field>
@@ -275,6 +283,8 @@ else
 
             <Field>
                 <FieldLabel>Автор</FieldLabel>
+                @if (IsAdmin)
+                {
                 <Select TValue="int" @bind-SelectedValue="newOrder.OrderAuthorID">
                     <SelectItem TValue="int" Value="0" Disabled Hidden>Выберите автора</SelectItem>
                     @if (authors != null)
@@ -288,6 +298,12 @@ else
                 @if (newOrder.OrderAuthorID <= 0)
                 {
                     <FieldHelp Style="color: red;">Необходимо выбрать автора</FieldHelp>
+                    }
+                }
+                else
+                {
+                    <TextEdit Text="@(currentUserName ?? "Не авторизован")" ReadOnly />
+                    <FieldHelp>Автор заблокирован для изменения (текущий пользователь).</FieldHelp>
                 }
             </Field>
         </ModalBody>
@@ -352,12 +368,19 @@ else
 
             <Field>
                 <FieldLabel>Статус</FieldLabel>
+                @if(IsAdmin)
+                {
                 <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus">
                     @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
                     {
                         <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
                     }
                 </Select>
+                }
+                else
+                {
+                    <TextEdit Text="@selectedOrder.OrderStatus.GetDescription()" ReadOnly />
+                }
             </Field>
 
             <Field>
@@ -377,12 +400,20 @@ else
 
             <Field>
                 <FieldLabel>Автор</FieldLabel>
+                @if (IsAdmin)
+                {
                 <Select TValue="int" @bind-SelectedValue="selectedOrder.OrderAuthorID">
                     @foreach (var author in authors)
                     {
                         <SelectItem TValue="int" Value="@author.ID">@author.Name</SelectItem>
                     }
-                </Select>
+                    </Select>
+                }
+                else
+                {
+                    <TextEdit Text="@(selectedOrder.OrderAuthor?.Name ?? "Не указан")" ReadOnly />
+                    <FieldHelp>Автор заблокирован для изменения.</FieldHelp>
+                }
             </Field>
         </ModalBody>
         <ModalFooter>
@@ -456,6 +487,8 @@ else
     private List<Order> orders = new();
     private List<FurnitureName> FurnitureNames = new();
     private List<OrderAuthor> authors = new();
+
+    private string? currentUserName;
 
     private string searchTerm = "";
 
@@ -541,6 +574,7 @@ else
         // Получаем авторизованного пользователя
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var username = authState.User?.Identity?.Name;
+        currentUserName = username;
         if (!string.IsNullOrEmpty(username))
         {
                 var user = authors.FirstOrDefault(a => a.Name == username);
@@ -770,4 +804,6 @@ else
             (o.AdmissionDate.ToString("dd/MM/yyyy")?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (o.OrderAuthor?.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (o.OrderAuthor?.Division.GetDescription()?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+
+    private bool IsAdmin => (AuthenticationStateProvider.GetAuthenticationStateAsync().Result?.User?.IsInRole("Admin") ?? false);
 }

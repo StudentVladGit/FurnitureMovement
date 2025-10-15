@@ -24,7 +24,11 @@ namespace FurnitureMovement.Services
             var (success, message) = await _authorizationService.LoginAsync(username, password);
             if (success)
             {
-                var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, username) }, "CustomAuth");
+                var user = await _authorizationService.GetUserByUsernameAsync(username); // Добавьте этот метод в AuthorizationService для получения пользователя
+
+                var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Role, user.Role.ToString()) // Добавляем роль как Claim
+                }, "CustomAuth");
                 _currentUser = new ClaimsPrincipal(identity);
                 NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
             }
