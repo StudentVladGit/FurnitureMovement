@@ -94,6 +94,9 @@ namespace FurnitureMovement.Migrations
                     b.Property<DateTime>("AdmissionDate")
                         .HasColumnType("date");
 
+                    b.Property<int>("CompleteOrOnWarehouseIndicator")
+                        .HasColumnType("integer");
+
                     b.Property<int>("DeleteIndicator")
                         .HasColumnType("integer");
 

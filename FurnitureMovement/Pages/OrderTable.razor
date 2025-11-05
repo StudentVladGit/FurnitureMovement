@@ -5,6 +5,7 @@
 @using Blazorise
 @using Blazorise.DataGrid
 @using Blazorise.Icons.FontAwesome
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IOrderService OrderService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
@@ -82,7 +83,7 @@ else
 
 <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ОТОБРАЖЕНИЯ ПОЗИЦИЙ ОСНАСТКИ -->
 <Modal @ref="furnituresModalRef">
-    <ModalContent Size="ModalSize.Large">
+    <ModalContent Size="ModalSize.ExtraLarge">
         <ModalHeader>
             <ModalTitle>Позиции заказа @currentOrder?.OrderNumber</ModalTitle>
             <CloseButton @onclick="HideFurnituresModal" />
@@ -250,20 +251,38 @@ else
 
             <Field>
                 <FieldLabel>Статус</FieldLabel>
-                @if (IsAdmin)
-                {
-                <Select TValue="OrderStatus" @bind-SelectedValue="newOrder.OrderStatus">
-                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
-                    {
-                        <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
-                    }
-                    </Select>
-                }
-                else
-                {
-                    <TextEdit Text="@newOrder.OrderStatus.GetDescription()" ReadOnly />
-                    <FieldHelp>Статус фиксирован для пользователя: Сформирован</FieldHelp>
-                }
+                <AuthorizeView>
+                    <Authorized Context="context">
+                        @if (context.User.IsInRole("Admin"))
+                        {
+                            <Select TValue="OrderStatus" @bind-SelectedValue="newOrder.OrderStatus">
+                                @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                                {
+                                    <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
+                                }
+                            </Select>
+                        }
+                        else if (context.User.IsInRole("Manager"))
+                        {
+                            <Select TValue="OrderStatus" @bind-SelectedValue="newOrder.OrderStatus">
+                                @foreach (OrderStatus status in GetAllowedStatusesForManager())
+                                {
+                                    <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
+                                }
+                            </Select>
+                            <FieldHelp>Доступны только базовые статусы для менеджера.</FieldHelp>
+                        }
+                        else
+                        {
+                            <TextEdit Text="@newOrder.OrderStatus.GetDescription()" ReadOnly />
+                            <FieldHelp>Статус фиксирован для пользователя: Сформирован</FieldHelp>
+                        }
+                    </Authorized>
+                    <NotAuthorized>
+                        <TextEdit Text="@newOrder.OrderStatus.GetDescription()" ReadOnly />
+                         <FieldHelp>Статус фиксирован: Сформирован</FieldHelp>
+                     </NotAuthorized>
+                 </AuthorizeView>
             </Field>
 
             <Field>
@@ -368,18 +387,29 @@ else
 
             <Field>
                 <FieldLabel>Статус</FieldLabel>
-                @if(IsAdmin)
+                @if (IsAdmin && selectedOrder.CompleteOrOnWarehouseIndicator != 1)
                 {
-                <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus">
-                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
-                    {
-                        <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
-                    }
-                </Select>
+                    <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus">
+                        @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                        {
+                            <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
+                        }
+                    </Select>
+                }
+                else if (IsManager && selectedOrder.CompleteOrOnWarehouseIndicator != 1)
+                {
+                    <Select TValue="OrderStatus" @bind-SelectedValue="selectedOrder.OrderStatus">
+                        @foreach (OrderStatus status in GetAllowedStatusesForManager())
+                        {
+                            <SelectItem TValue="OrderStatus" Value="@status">@status.GetDescription()</SelectItem>
+                        }
+                    </Select>
+                    <FieldHelp>Доступны только базовые статусы для менеджера.</FieldHelp>
                 }
                 else
                 {
                     <TextEdit Text="@selectedOrder.OrderStatus.GetDescription()" ReadOnly />
+                    <FieldHelp>Статус заблокирован для изменения.</FieldHelp>
                 }
             </Field>
 
@@ -505,8 +535,16 @@ else
     private List<Furniture> selectedFurnitures = new();
 
     private Order currentOrder;
+    private OrderStatus originalOrderStatus;
     private string currentImage = "";
     private string currentDrawing = "";
+
+    private OrderStatus[] GetAllowedStatusesForManager()
+    {
+        return new[] { OrderStatus.Generated, OrderStatus.Decorated, OrderStatus.InThePreparationProcess, 
+            OrderStatus.ToWarehouse, OrderStatus.Completed  }; // Ограниченный список
+    }
+
 
     <!-- ИНИЦИАЛИЗАЦИЯ -->
     protected override async Task OnInitializedAsync()
@@ -640,7 +678,8 @@ else
                 OrderPriority = order.OrderPriority,
                 AdmissionDate = order.AdmissionDate,
                 OrderAuthorID = order.OrderAuthorID,
-                OrderAuthor = order.OrderAuthor
+                OrderAuthor = order.OrderAuthor,
+                CompleteOrOnWarehouseIndicator = order.CompleteOrOnWarehouseIndicator  // Добавлено
             };
 
         selectedFurnitures = new List<Furniture>();
@@ -680,6 +719,11 @@ else
             await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите автора!");
             return;
         }
+        // Добавлено: Установка индикатора при создании с завершенным статусом
+        if (newOrder.OrderStatus == OrderStatus.Completed || newOrder.OrderStatus == OrderStatus.ToWarehouse)
+        {
+            newOrder.CompleteOrOnWarehouseIndicator = 1;
+        }
         try
         {
             newOrder.Furnitures = newFurnitures;
@@ -709,7 +753,17 @@ else
                 await JSRuntime.InvokeVoidAsync("alert", "Пожалуйста, выберите наименование для всех позиций оснастки!");
                 return;
             }
-
+            // Добавлено: Блокировка сохранения, если заказ завершен и статус пытаются изменить
+            if (selectedOrder.CompleteOrOnWarehouseIndicator == 1 && selectedOrder.OrderStatus != originalOrderStatus)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Статус заказа нельзя изменить после завершения или размещения на складе!");
+                return;
+            }
+            // Установка индикатора при смене на завершенный статус
+            if (selectedOrder.OrderStatus == OrderStatus.Completed || selectedOrder.OrderStatus == OrderStatus.ToWarehouse)
+            {
+                selectedOrder.CompleteOrOnWarehouseIndicator = 1;
+            }
             try
             {
                 selectedOrder.Furnitures = selectedFurnitures;
@@ -717,7 +771,6 @@ else
                 {
                     furniture.FurnitureName = null;
                 }
-
                 await OrderService.UpdateOrder(selectedOrder);
                 await editModalRef.Hide();
                 await Refresh();
@@ -806,4 +859,5 @@ else
             (o.OrderAuthor?.Division.GetDescription()?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 
     private bool IsAdmin => (AuthenticationStateProvider.GetAuthenticationStateAsync().Result?.User?.IsInRole("Admin") ?? false);
+    private bool IsManager => (AuthenticationStateProvider.GetAuthenticationStateAsync().Result?.User?.IsInRole("Manager") ?? false);
 }

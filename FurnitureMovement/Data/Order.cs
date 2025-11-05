@@ -66,6 +66,7 @@ namespace FurnitureMovement.Data
 
 		public int OrderAuthorID { get; set; }
         public int DeleteIndicator { get; set; } = 0;
+        public int CompleteOrOnWarehouseIndicator { get; set; } = 0;
 
         [ForeignKey("OrderAuthorID")]
         public OrderAuthor? OrderAuthor { get; set; }

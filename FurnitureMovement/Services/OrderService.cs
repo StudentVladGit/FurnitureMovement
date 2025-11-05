@@ -62,6 +62,12 @@ public class OrderService : IOrderService
         if (!authorExists)
             throw new ArgumentException("Указанный автор не существует");
 
+        // Добавлено: Установка индикатора при создании заказа с завершенным статусом
+        if (newOrder.OrderStatus == OrderStatus.Completed || newOrder.OrderStatus == OrderStatus.ToWarehouse)
+        {
+            newOrder.CompleteOrOnWarehouseIndicator = 1;
+        }
+
         newOrder.Furnitures = newOrderFurnitures;
         foreach (var furniture in newOrderFurnitures)
         {
@@ -99,6 +105,12 @@ public class OrderService : IOrderService
                 existingOrder.OrderPriority = updatedOrder.OrderPriority;
                 existingOrder.AdmissionDate = updatedOrder.AdmissionDate;
                 existingOrder.OrderAuthorID = updatedOrder.OrderAuthorID;
+
+                // Добавлено: Установка индикатора при смене на завершенный статус
+                if (existingOrder.OrderStatus == OrderStatus.Completed || existingOrder.OrderStatus == OrderStatus.ToWarehouse)
+                {
+                    existingOrder.CompleteOrOnWarehouseIndicator = 1;
+                }
 
                 // Удаляем старые оснастки
                 if (existingOrder.Furnitures != null && existingOrder.Furnitures.Any())

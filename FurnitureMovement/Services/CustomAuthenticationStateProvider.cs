@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Threading.Tasks;
+using FurnitureMovement.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FurnitureMovement.Services
@@ -26,8 +27,18 @@ namespace FurnitureMovement.Services
             {
                 var user = await _authorizationService.GetUserByUsernameAsync(username); // Добавьте этот метод в AuthorizationService для получения пользователя
 
-                var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Role, user.Role.ToString()) // Добавляем роль как Claim
+                var roleClaim = user.Role switch
+                {
+                    UserRole.Admin => "Admin",
+                    UserRole.Manager => "Manager",
+                    UserRole.User => "User",
+                    _ => "User"
+                };
+
+                var identity = new ClaimsIdentity(new[] 
+                { 
+                    new Claim(ClaimTypes.Name, username),
+                    new Claim(ClaimTypes.Role, roleClaim) // Передаем роль как строку
                 }, "CustomAuth");
                 _currentUser = new ClaimsPrincipal(identity);
                 NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));

@@ -11,10 +11,18 @@
         <CardBody>
             <ValidationSummary />
             <TextEdit @bind-Text="username" Placeholder="Логин" />
-            <TextEdit @bind-Text="password" Placeholder="Пароль" TextMode="password" />
+
+            <!-- Добавлено: Поле пароля с функцией скрытия/показа -->
+            <Field>
+                <TextEdit @bind-Text="password" Placeholder="Пароль" Type="@(showPassword ? "text" : "password")" />
+                <FieldHelp>
+                    <Button Size="Size.Small" Clicked="TogglePasswordVisibility" Color="Color.Secondary" Class="mt-1">
+                        @(showPassword ? "Скрыть" : "Показать")
+                    </Button>
+                </FieldHelp>
+            </Field>
 
             <Button Color="Color.Primary" Class="mt-3" Clicked="OnLogin">Войти</Button>
-
             @if (!string.IsNullOrEmpty(message))
             {
                 <p class="text-danger mt-2">@message</p>
@@ -27,6 +35,15 @@
     private string username = string.Empty;
     private string password = string.Empty;
     private string? message;
+
+    <!-- Добавлено: флаг видимости пароля -->
+    private bool showPassword = false;
+
+    <!-- Добавлено: функция переключения видимости пароля -->
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
 
     private async Task OnLogin()
     {

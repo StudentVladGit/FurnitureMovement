@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20251015110923_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251105085338_AddCompleteOrOnWarehouse")]
+    partial class AddCompleteOrOnWarehouse
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -96,6 +96,9 @@ namespace FurnitureMovement.Migrations
 
                     b.Property<DateTime>("AdmissionDate")
                         .HasColumnType("date");
+
+                    b.Property<int>("CompleteOrOnWarehouseIndicator")
+                        .HasColumnType("integer");
 
                     b.Property<int>("DeleteIndicator")
                         .HasColumnType("integer");

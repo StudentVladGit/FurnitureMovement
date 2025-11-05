@@ -6,8 +6,10 @@ namespace FurnitureMovement.Data
     {
         //[Display(Name = "Пользователь")]
         User = 0,
+        //[Display(Name = "Менеджер")]
+        Manager = 1,
         //[Display(Name = "Администратор")]
-        Admin = 1
+        Admin = 2
     }
     public class User
     {
