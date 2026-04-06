@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FurnitureMovement.Migrations
 {
     [DbContext(typeof(OrderContext))]
-    [Migration("20250615100414_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251105085338_AddCompleteOrOnWarehouse")]
+    partial class AddCompleteOrOnWarehouse
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -97,6 +97,9 @@ namespace FurnitureMovement.Migrations
                     b.Property<DateTime>("AdmissionDate")
                         .HasColumnType("date");
 
+                    b.Property<int>("CompleteOrOnWarehouseIndicator")
+                        .HasColumnType("integer");
+
                     b.Property<int>("DeleteIndicator")
                         .HasColumnType("integer");
 
@@ -142,9 +145,49 @@ namespace FurnitureMovement.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
                     b.HasKey("ID");
 
                     b.ToTable("OrderAuthors", (string)null);
+                });
+
+            modelBuilder.Entity("FurnitureMovement.Data.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsLocked")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("OrderAuthorId")
+                        .IsRequired()
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderAuthorId")
+                        .IsUnique();
+
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("FurnitureMovement.Data.WarehouseItem", b =>
@@ -212,9 +255,26 @@ namespace FurnitureMovement.Migrations
                     b.Navigation("OrderAuthor");
                 });
 
+            modelBuilder.Entity("FurnitureMovement.Data.User", b =>
+                {
+                    b.HasOne("FurnitureMovement.Data.OrderAuthor", "OrderAuthor")
+                        .WithOne("User")
+                        .HasForeignKey("FurnitureMovement.Data.User", "OrderAuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrderAuthor");
+                });
+
             modelBuilder.Entity("FurnitureMovement.Data.Order", b =>
                 {
                     b.Navigation("Furnitures");
+                });
+
+            modelBuilder.Entity("FurnitureMovement.Data.OrderAuthor", b =>
+                {
+                    b.Navigation("User")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

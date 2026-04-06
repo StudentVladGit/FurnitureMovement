@@ -8,12 +8,12 @@ namespace FurnitureMovement.Data
         public OrderContext(DbContextOptions<OrderContext> options) : base(options)
         {
         }
-
         public DbSet<Order> Orders { get; set; }
         public DbSet<Furniture> Furnitures { get; set; }
         public DbSet<FurnitureName> FurnitureNames { get; set; }
         public DbSet<OrderAuthor> OrderAuthors { get; set; }
         public DbSet<WarehouseItem> WarehouseItems { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,6 +41,13 @@ namespace FurnitureMovement.Data
                 .HasOne(f => f.FurnitureName)
                 .WithMany()
                 .HasForeignKey(f => f.FurnitureNameID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Связь User-OrderAuthor (один-к-одному)
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.OrderAuthor)
+                .WithOne(oa => oa.User)
+                .HasForeignKey<User>(u => u.OrderAuthorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Настройка имен таблиц (соответствует вашим предпочтениям)
